@@ -100,7 +100,7 @@ module.exports = {
 
        }.bind(this));
 
-      loader.load( "images/fire-particle.png", function( value){
+      loader.load( "images/fire.png", function( value){
 
         this.fireTexture = value;
         //this.uniforms.map.value = value;
@@ -224,7 +224,7 @@ module.exports = {
         displacementArray[i] = 1.3*goatdata.data.attributes.position.array[(i*3+1)]/(smallest);//4*goatdata.data.attributes.normal[i*3]//Math.random();//goatdata.metadata.position;
         displacementArray[i] += Math.random()*0.3;
 
-        if( Math.random() > 0.95 ) {
+        if( Math.random() > 0.95 && goatdata.data.attributes.position.array[(i*3+1)] < 5 ) {
           //create paricle spawn point
           this.createSpawnPoint(
             new THREE.Vector3(goatdata.data.attributes.position.array[(i*3)],
@@ -327,6 +327,7 @@ module.exports = {
 
     createSpawnPoint: function( pos ){
 
+
       pos.y *= -1;
 
       var showSpawnPoints = false;
@@ -343,6 +344,10 @@ module.exports = {
       if( !this.spawnPoints){
         this.spawnPoints = [];
       }
+
+      //if( this.spawnPoints.length > 2 )
+      //  return;
+
 
       this.spawnPoints.push(pos);
 
@@ -379,23 +384,26 @@ module.exports = {
       var sizes = new Float32Array( particles );
       var start = new Float32Array( particles );
       var rotation = new Float32Array( particles );
-
+      var offsets = new Float32Array( particles * 2 );
       var color = new THREE.Color(1,1,1);
 
-      for ( var i = 0, i3 = 0; i < particles; i ++, i3 += 3 ) {
+      for ( var i = 0, i2 = 0 , i3 = 0; i < particles; i ++, i2 += 2, i3 += 3 ) {
 
         positions[ i3 + 0 ] = this.spawnPoints[i].x;
         positions[ i3 + 1 ] = this.spawnPoints[i].y;
         positions[ i3 + 2 ] = this.spawnPoints[i].z;
 
+        offsets[i2] = Math.floor( Math.random()*4)/4;
+        offsets[i2+1] = Math.floor( Math.random()*4)/4;
         start[i] = Math.random();
         rotation[i] = Math.random()*2-1;
 
         //color.setHSL( i / particles, 1.0, 0.5 );
 
-        colors[ i3 + 0 ] = color.r;
-        colors[ i3 + 1 ] = color.g;
-        colors[ i3 + 2 ] = color.b;
+        var intensity = Math.random()*0.5+0.3;
+        colors[ i3 + 0 ] = color.r*intensity;
+        colors[ i3 + 1 ] = color.g*intensity;
+        colors[ i3 + 2 ] = color.b*intensity;
 
         sizes[ i ] = 65;
       }
@@ -404,6 +412,7 @@ module.exports = {
       geometry.addAttribute( 'customColor', new THREE.BufferAttribute( colors, 3 ) );
       geometry.addAttribute( 'size', new THREE.BufferAttribute( sizes, 1 ) );
       geometry.addAttribute( 'start', new THREE.BufferAttribute( start, 1 ) );
+      geometry.addAttribute( 'offset', new THREE.BufferAttribute( offsets, 2 ) );
       geometry.addAttribute( 'rotation', new THREE.BufferAttribute( rotation, 1 ) );
 
       this.particleSystem = new THREE.Points( geometry, particleMaterial );
@@ -452,11 +461,10 @@ module.exports = {
         this.rafId = raf(this.render);
       }
 
-      this.mainContainer.rotation.y += 0.01;
-      this.particleSystem.rotation.y += 0.01;
+      this.mainContainer.rotation.y = (this.mouse2d.x+1)/2*3 + Math.PI*0.5;
+      this.particleSystem.rotation.y = (this.mouse2d.x+1)/2*3;
 
       //this.goat.morphTargetInfluences[0] = (this.mouse2d.x+1)/2;
-      var time = Date.now() * 0.005;
 
       this.particleUniforms.time.value += 0.005;//(this.mouse2d.x+1)/2 * 4;
 

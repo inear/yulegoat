@@ -1,5 +1,8 @@
 uniform float time;
 
+attribute vec2 offset;
+varying vec2 vOffset;
+
 attribute float size;
 attribute float rotation;
 attribute float start;
@@ -32,33 +35,34 @@ vec3 rotateAngleAxis(float angle, vec3 axis, vec3 v) {
 void main() {
 
   vColor = customColor;
+  vOffset = offset;
 
-
-  vec3 mid = vec3(0.0, 0.0, 0.0);
+  vec3 mid = vec3(0.0, 20.5, 0.0);
   //vec3 rpos = rotateAngleAxis(start+time, vec3(mod(start,16.0), -8.0+mod(start,15.0), 1.0), position - mid) + mid;
-  vec3 rpos = rotateAngleAxis(clamp(start+time,0.0,2.0), vec3(0.0, 0.5, 1.0), position - mid) + mid;
+  vec3 rpos = rotateAngleAxis(start+time, vec3(0.0, 0.5, 0.0), position - mid) + mid;
+  //vec3 rpos = position.xyz;
 
-
-  vec4 fpos = vec4( mix(position,rpos,0.5), 1.0 );
+  //vec4 fpos = vec4(rpos,1.0);//vec4( mix(position,rpos,0.5), 1.0 );
+  vec4 fpos = vec4( mix(position,rpos,position.y*0.1), 1.0 );
 
   //fpos.z += ((sin(start+time)))*1.2;
 
 
 
   //pos.y += 5.0*sin(time*2.0);
-  float offsetTarget = 5.0;
+  float offsetTarget = 4.0*(sin(time*.3)+0.5);
 
-  vColor.rbg = vec3(offsetTarget-(fpos.y))*time;
+  vColor.rbg = vColor.rbg*vec3(offsetTarget-(fpos.y-5.0));
 
   vec4 mvPosition = modelViewMatrix * fpos;
-  float distFromSpawnPoint = (mod(time+start,0.9)*2.0)*offsetTarget;
-  lifePosition = distFromSpawnPoint/offsetTarget;
+  float distFromSpawnPoint = (mod(time+start,0.5)*2.0)*offsetTarget;
+  lifePosition = clamp(distFromSpawnPoint/offsetTarget,0.0,1.0);
   mvPosition.y += distFromSpawnPoint;
 
-  gl_PointSize = size * (lifePosition*lifePosition*2.0);
+  gl_PointSize = size * (lifePosition*4.0);
 
   gl_Position = projectionMatrix * mvPosition;
 
-  vRotation = (time*sign(rotation)+rotation)*lifePosition;
+  vRotation = (time+rotation);
 
 }

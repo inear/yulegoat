@@ -905,7 +905,7 @@ totalSpecularLight *= shadowMask;
   //alpha = 1.0;
   alpha = smoothstep(0.7,1.0,alpha);
   //gl_FragColor = vec4( outgoingLight*(1.0-v_displaced*abs(sin(time))), alpha );
-  gl_FragColor = vec4( outgoingLight*(1.0-v_displaced*time*2.0), alpha );
+  //gl_FragColor = vec4( outgoingLight*(1.0-v_displaced*time*2.0), alpha );
 
 }
 

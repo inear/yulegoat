@@ -281,7 +281,7 @@ vec3 transformedNormal = normalMatrix * objectNormal;
 
 vec3 transformed = vec3( position );
 float amount = time*displacement;
-transformed = position*(1.0-amount) + position2*amount;
+//transformed = position*(1.0-amount) + position2*amount;
 
 
 vec4 mvPosition = modelViewMatrix * vec4( transformed, 1.0 );
@@ -291,7 +291,7 @@ gl_Position = projectionMatrix * mvPosition;
 
 vNormal = normalize( transformedNormal );
 
-gl_Position.y += amount*0.5;
+//gl_Position.y += amount*0.5;
 //gl_Position.y += cos(amount)*0.5*amount;
 
 #ifdef USE_LOGDEPTHBUF
