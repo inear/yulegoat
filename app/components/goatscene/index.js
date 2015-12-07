@@ -224,7 +224,7 @@ module.exports = {
         displacementArray[i] = 1.3*goatdata.data.attributes.position.array[(i*3+1)]/(smallest);//4*goatdata.data.attributes.normal[i*3]//Math.random();//goatdata.metadata.position;
         displacementArray[i] += Math.random()*0.3;
 
-        if( Math.random() > 0.9 ) {
+        if( Math.random() > 0.95 ) {
           //create paricle spawn point
           this.createSpawnPoint(
             new THREE.Vector3(goatdata.data.attributes.position.array[(i*3)],
@@ -389,7 +389,7 @@ module.exports = {
         positions[ i3 + 2 ] = this.spawnPoints[i].z;
 
         start[i] = Math.random();
-        rotation[i] = Math.random();
+        rotation[i] = Math.random()*2-1;
 
         //color.setHSL( i / particles, 1.0, 0.5 );
 
@@ -397,7 +397,7 @@ module.exports = {
         colors[ i3 + 1 ] = color.g;
         colors[ i3 + 2 ] = color.b;
 
-        sizes[ i ] = 45;
+        sizes[ i ] = 65;
       }
 
       geometry.addAttribute( 'position', new THREE.BufferAttribute( positions, 3 ) );
@@ -406,9 +406,9 @@ module.exports = {
       geometry.addAttribute( 'start', new THREE.BufferAttribute( start, 1 ) );
       geometry.addAttribute( 'rotation', new THREE.BufferAttribute( rotation, 1 ) );
 
-      var particleSystem = new THREE.Points( geometry, particleMaterial );
+      this.particleSystem = new THREE.Points( geometry, particleMaterial );
 
-      this.scene.add( particleSystem );
+      this.scene.add( this.particleSystem );
     },
 
     initLights: function(){
@@ -428,8 +428,8 @@ module.exports = {
 
 
       light = new THREE.SpotLight( 0xffffff, 0.8, 30,10 );
-      var helper = new THREE.SpotLightHelper(light);
-      this.scene.add(helper);
+      //var helper = new THREE.SpotLightHelper(light);
+      //this.scene.add(helper);
       light.position.copy(this.goat.position);//.add(-300,100,100);
       light.position.y = 30;
       light.position.x = 0;
@@ -452,13 +452,15 @@ module.exports = {
         this.rafId = raf(this.render);
       }
 
+      this.mainContainer.rotation.y += 0.01;
+      this.particleSystem.rotation.y += 0.01;
+
       //this.goat.morphTargetInfluences[0] = (this.mouse2d.x+1)/2;
       var time = Date.now() * 0.005;
 
-      this.particleUniforms.time.value = (this.mouse2d.x+1)/2 * 4;
+      this.particleUniforms.time.value += 0.005;//(this.mouse2d.x+1)/2 * 4;
 
-      //this.uniforms.time.value = time;
-      this.uniforms.time.value = (this.mouse2d.x+1)/2 * 4;
+      this.uniforms.time.value += 0.005;//(this.mouse2d.x+1)/2 * 4;
 
       this.renderer.render(this.scene, this.camera);
 

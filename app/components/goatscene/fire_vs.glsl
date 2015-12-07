@@ -32,23 +32,23 @@ vec3 rotateAngleAxis(float angle, vec3 axis, vec3 v) {
 void main() {
 
   vColor = customColor;
-  vRotation = time+rotation*3.0;
 
-  vec3 mid = vec3(0.5, 0.5, 0.0);
+
+  vec3 mid = vec3(0.0, 0.0, 0.0);
   //vec3 rpos = rotateAngleAxis(start+time, vec3(mod(start,16.0), -8.0+mod(start,15.0), 1.0), position - mid) + mid;
-  vec3 rpos = position;//rotateAngleAxis(clamp(start+time,0.0,2.0), vec3(0.0, 1.0, 0.0), position - mid) + mid;
+  vec3 rpos = rotateAngleAxis(clamp(start+time,0.0,2.0), vec3(0.0, 0.5, 1.0), position - mid) + mid;
 
 
-  vec4 fpos = vec4( mix(position,rpos,clamp(time,0.0,0.7)), 1.0 );
+  vec4 fpos = vec4( mix(position,rpos,0.5), 1.0 );
 
   //fpos.z += ((sin(start+time)))*1.2;
 
 
 
   //pos.y += 5.0*sin(time*2.0);
-  float offsetTarget = 3.0;
+  float offsetTarget = 5.0;
 
-  vColor.rbg = vec3(offsetTarget-fpos.y);
+  vColor.rbg = vec3(offsetTarget-(fpos.y))*time;
 
   vec4 mvPosition = modelViewMatrix * fpos;
   float distFromSpawnPoint = (mod(time+start,0.9)*2.0)*offsetTarget;
@@ -59,5 +59,6 @@ void main() {
 
   gl_Position = projectionMatrix * mvPosition;
 
+  vRotation = (time*sign(rotation)+rotation)*lifePosition;
 
 }
