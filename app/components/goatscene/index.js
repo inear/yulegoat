@@ -85,13 +85,24 @@ module.exports = {
 
     loadTextures: function(){
 
-      var total = 2;
+      var total = 3;
       var loaded = 0;
       var loader = new THREE.TextureLoader();
 
       loader.load( "images/bock_map.jpg", function( value){
 
         this.goatMap = value;
+        //this.uniforms.map.value = value;
+
+        loaded++;
+
+        checkLoadStatus();
+
+       }.bind(this));
+
+      loader.load( "images/fire-particle.png", function( value){
+
+        this.fireTexture = value;
         //this.uniforms.map.value = value;
 
         loaded++;
@@ -160,6 +171,9 @@ module.exports = {
 
       var scene = this.scene;
 
+      this.mainContainer = new THREE.Object3D();
+      this.mainContainer.rotation.y = Math.PI*0.5;
+      this.scene.add(this.mainContainer);
       var data = require('./goatscene.json');
       var mainData = require('./mainscene.json');
 
@@ -168,10 +182,10 @@ module.exports = {
       this.camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, 1100);
       this.scene.add(this.camera);
 
-      matrix.fromArray( mainData.object.children[0].matrix );
-      matrix.decompose( this.camera.position, this.camera.quaternion, this.camera.scale );
+      //matrix.fromArray( mainData.object.children[0].matrix );
+      //matrix.decompose( this.camera.position, this.camera.quaternion, this.camera.scale );
 
-      this.camera.position.set(-10,8,-8);
+      this.camera.position.set(-40,20,-20);
 
       this.renderer = new THREE.WebGLRenderer({
         alpha: false
@@ -189,18 +203,8 @@ module.exports = {
       this.gammaInput = true;
       this.gammaOutput = true;
 
-      //var loader = new THREE.ObjectLoader();
-      //loader.load( "models/julbock.json", function ( loadedScene ) {
-    //;
-      //this.scene.fog = new THREE.Fog( 0xffffff, 2000, 10000 );
-
-      /*var goat1 = scene.getObjectByName( 'goat1' );
-      scene.remove(goat1);
-
-      var goat2 = scene.getObjectByName( 'goat1' );
-*/
-      var goatdata = data.geometries[0];
-      var goatdata2 = data.geometries[1];
+      var goatdata = data.geometries[1];
+      var goatdata2 = data.geometries[0];
 
       var goatGeo = new THREE.BufferGeometry();
       goatGeo.setIndex( new THREE.BufferAttribute( new Uint16Array(goatdata.data.index.array), 1 ) );
@@ -220,6 +224,14 @@ module.exports = {
         displacementArray[i] = 1.3*goatdata.data.attributes.position.array[(i*3+1)]/(smallest);//4*goatdata.data.attributes.normal[i*3]//Math.random();//goatdata.metadata.position;
         displacementArray[i] += Math.random()*0.3;
 
+        if( Math.random() > 0.9 ) {
+          //create paricle spawn point
+          this.createSpawnPoint(
+            new THREE.Vector3(goatdata.data.attributes.position.array[(i*3)],
+            goatdata.data.attributes.position.array[(i*3+1)],
+            goatdata.data.attributes.position.array[(i*3+2)])
+          );
+        }
       }
 
       goatGeo.addAttribute( 'displacement', new THREE.BufferAttribute( displacementArray, 1 ) );
@@ -270,17 +282,16 @@ module.exports = {
           derivatives:true
       });
 
-      //shaderMaterial = new THREE.MeshLambertMaterial({map:this.goatMap});
-//shaderMaterial = new THREE.MeshPhongMaterial({map:this.goatMap, normalmap:this.goatNormalMap});
       var goat = this.goat = new THREE.Mesh( goatGeo, shaderMaterial);
       matrix.fromArray( data.object.children[1].matrix );
       matrix.decompose( goat.position, goat.quaternion, goat.scale );
       goat.castShadow = true;
       goat.recieveShadow = true;
-      this.scene.add(goat);
+      this.mainContainer.add(goat);
+
 
       var lookAtPos = this.goat.position.clone();
-      lookAtPos.y += 1;
+      lookAtPos.y += 5;
 
       this.camera.lookAt(lookAtPos);
 
@@ -293,9 +304,9 @@ module.exports = {
       frame.castShadow = true;
       //matrix.fromArray( data.object.children[1].matrix );
       //matrix.decompose( goat.position, goat.quaternion, goat.scale );
-      this.scene.add(frame);
+      this.mainContainer.add(frame);
 
-      //goat.add( new THREE.Mesh(new THREE.SphereGeometry(6,5,5), new THREE.MeshPhongMaterial({map:this.goatMap,color:0xffffff})));
+      //ground
       var plane = new THREE.Mesh( new THREE.PlaneGeometry(400,400,2,2),new THREE.MeshLambertMaterial({color:0x444444}));
       goat.add(plane);
       plane.rotation.x = Math.PI*0.5;
@@ -303,42 +314,136 @@ module.exports = {
       plane.castShadow = false;
       plane.receiveShadow = true;
 
-      /*var clip = goat.geometry.animations[0];
-      mixer = new THREE.AnimationMixer( goat );
-      mixer.addAction( new THREE.AnimationAction( clip ) );
-*/
-      var light = new THREE.PointLight(0xffffff, 0.7);
 
-      light.position.x = -100;
+      this.initLights();
+
+      this.startParticleEngine();
+
+      this.start();
+
+
+
+    },
+
+    createSpawnPoint: function( pos ){
+
+      pos.y *= -1;
+
+      var showSpawnPoints = false;
+      if( showSpawnPoints ) {
+        if( !this.spawnHelperGeo ){
+          this.spawnHelperGeo = new THREE.SphereGeometry(0.1,2,2);
+          this.spawnHelperMaterial = new THREE.MeshBasicMaterial();
+        }
+        var pointHelper = new THREE.Mesh( this.spawnHelperGeo, this.spawnHelperMaterial);
+        pointHelper.position.copy(pos);
+        this.scene.add(pointHelper);
+      }
+
+      if( !this.spawnPoints){
+        this.spawnPoints = [];
+      }
+
+      this.spawnPoints.push(pos);
+
+    },
+
+    startParticleEngine: function(){
+
+      var particles = this.spawnPoints.length;
+
+      this.fireTexture.wrapS = this.fireTexture.wrapT = THREE.ClampWrapping;
+
+      this.particleUniforms = {
+        time:      { type: "f", value:0 },
+        color:     { type: "c", value: new THREE.Color( 0xffffff ) },
+        texture:   { type: "t", value: this.fireTexture }
+
+      };
+
+      var particleMaterial = new THREE.ShaderMaterial( {
+
+        uniforms:       this.particleUniforms,
+        vertexShader:   require('./fire_vs.glsl'),
+        fragmentShader: require('./fire_fs.glsl'),
+
+        blending:       THREE.NormalBlending,
+        depthTest:      false,
+        transparent:    true
+      });
+
+      var geometry = new THREE.BufferGeometry();
+
+      var positions = new Float32Array( particles * 3 );
+      var colors = new Float32Array( particles * 3 );
+      var sizes = new Float32Array( particles );
+      var start = new Float32Array( particles );
+      var rotation = new Float32Array( particles );
+
+      var color = new THREE.Color(1,1,1);
+
+      for ( var i = 0, i3 = 0; i < particles; i ++, i3 += 3 ) {
+
+        positions[ i3 + 0 ] = this.spawnPoints[i].x;
+        positions[ i3 + 1 ] = this.spawnPoints[i].y;
+        positions[ i3 + 2 ] = this.spawnPoints[i].z;
+
+        start[i] = Math.random();
+        rotation[i] = Math.random();
+
+        //color.setHSL( i / particles, 1.0, 0.5 );
+
+        colors[ i3 + 0 ] = color.r;
+        colors[ i3 + 1 ] = color.g;
+        colors[ i3 + 2 ] = color.b;
+
+        sizes[ i ] = 45;
+      }
+
+      geometry.addAttribute( 'position', new THREE.BufferAttribute( positions, 3 ) );
+      geometry.addAttribute( 'customColor', new THREE.BufferAttribute( colors, 3 ) );
+      geometry.addAttribute( 'size', new THREE.BufferAttribute( sizes, 1 ) );
+      geometry.addAttribute( 'start', new THREE.BufferAttribute( start, 1 ) );
+      geometry.addAttribute( 'rotation', new THREE.BufferAttribute( rotation, 1 ) );
+
+      var particleSystem = new THREE.Points( geometry, particleMaterial );
+
+      this.scene.add( particleSystem );
+    },
+
+    initLights: function(){
+       var light = new THREE.PointLight(0xffffff, 0.7);
+
+      light.position.x = -50;
       light.position.y = 60;
-      light.position.z = 100;
-      //scene.add(light);
+      light.position.z = 50;
+      this.scene.add(light);
 
       light = new THREE.DirectionalLight(0xffffff, 0.7);
       //light.position.set(-40, 400, 0);
-      scene.add(light);
+      this.scene.add(light);
 
       light = new THREE.AmbientLight(0x222222, 0.2);
       this.scene.add(light);
 
 
-      var light = new THREE.SpotLight( 0xffffff, 0.8, 10,10 );
-      //var helper = new THREE.SpotLightHelper(light);
-      //this.scene.add(helper);
+      light = new THREE.SpotLight( 0xffffff, 0.8, 30,10 );
+      var helper = new THREE.SpotLightHelper(light);
+      this.scene.add(helper);
       light.position.copy(this.goat.position);//.add(-300,100,100);
-      light.position.y = 8;
+      light.position.y = 30;
+      light.position.x = 0;
+      //light.rotation.x = 10*Math.PI/180;
+      //light.lookAt(this.goat.position);
       light.castShadow = true;
       light.shadowCameraNear = 1;
-      light.shadowCameraFar = 20;
-      light.shadowCameraFov = 70;
+      light.shadowCameraFar = 200;
+      light.shadowCameraFov = 60;
       light.shadowBias = -0.00022;
       light.shadowDarkness = 0.5;
       light.shadowMapWidth = 1024;
       light.shadowMapHeight = 1024;
       this.scene.add(light);
-
-      this.start();
-
     },
 
     render: function() {
@@ -348,8 +453,11 @@ module.exports = {
       }
 
       //this.goat.morphTargetInfluences[0] = (this.mouse2d.x+1)/2;
+      var time = Date.now() * 0.005;
 
-      this.uniforms.time.value += 0.01;
+      this.particleUniforms.time.value = (this.mouse2d.x+1)/2 * 4;
+
+      //this.uniforms.time.value = time;
       this.uniforms.time.value = (this.mouse2d.x+1)/2 * 4;
 
       this.renderer.render(this.scene, this.camera);

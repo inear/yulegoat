@@ -26,8 +26,8 @@
                 }
             }
         },
-        "name": "Cylinder.001Geometry.3",
-        "uuid": "4253BC05-DEF2-3EA8-B4BE-839BC4E6094A",
+        "name": "Cylinder.001Geometry.4",
+        "uuid": "A1DFE53E-BEA9-34D4-A318-67CDA6BB7D80",
         "metadata": {
             "version": 3,
             "normal": 388,
@@ -51,14 +51,14 @@
         },{
             "name": "wodden_frame",
             "uuid": "1CEBB1F9-1157-3283-851D-EC2915204CB8",
-            "matrix": [-1,0,0,0,0,0,1,0,0,1,0,0,0.427865,0.967442,0.003002,1],
+            "matrix": [-3.0856,0,0,0,0,0,3.0856,0,0,3.0856,0,0,1.08401,2.94107,0.126521,1],
             "visible": true,
             "type": "Mesh",
             "castShadow": false,
             "receiveShadow": false,
-            "geometry": "4253BC05-DEF2-3EA8-B4BE-839BC4E6094A"
+            "geometry": "A1DFE53E-BEA9-34D4-A318-67CDA6BB7D80"
         }],
-        "uuid": "6EB30061-2CD1-43C8-9651-7D9CDBF09964",
+        "uuid": "9434AF8A-8190-49F0-B29A-E320C96BEEA8",
         "matrix": [1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1],
         "type": "Scene"
     },

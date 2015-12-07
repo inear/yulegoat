@@ -291,7 +291,7 @@ gl_Position = projectionMatrix * mvPosition;
 
 vNormal = normalize( transformedNormal );
 
-//gl_Position.y += amount*0.5;
+gl_Position.y += amount*0.5;
 //gl_Position.y += cos(amount)*0.5*amount;
 
 #ifdef USE_LOGDEPTHBUF
