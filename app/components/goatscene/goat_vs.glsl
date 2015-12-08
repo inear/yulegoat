@@ -3,6 +3,7 @@ varying vec3 vViewPosition;
 attribute float displacement;
 attribute vec3 position2;
 varying float v_displaced;
+uniform float goatBurned;
 uniform float time;
 
 varying vec3 vNormal;
@@ -280,8 +281,8 @@ v_displaced = displacement;
 vec3 transformedNormal = normalMatrix * objectNormal;
 
 vec3 transformed = vec3( position );
-float amount = time*displacement;
-//transformed = position*(1.0-amount) + position2*amount;
+float amount = displacement*goatBurned;
+transformed = position*(1.0-amount) + position2*amount;
 
 
 vec4 mvPosition = modelViewMatrix * vec4( transformed, 1.0 );

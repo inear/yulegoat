@@ -8,6 +8,9 @@ var TimelineMax = require('timelinemax');
 var TweenMax = require('tweenmax');
 var Vue = require('vue');
 var detector = require('../../lib/detector');
+var dat = require('dat-gui');
+var mainSceneData = require('./mainscene.json');
+var goatData = require('./goatscene.json');
 
 module.exports = {
   replace: true,
@@ -35,6 +38,8 @@ module.exports = {
 
     //this.initLoader();
     //TweenMax.delayedCall(3, this.showLoader.bind(this));
+
+    this.initGUI();
 
     console.log("compiled");
 
@@ -85,7 +90,7 @@ module.exports = {
 
     loadTextures: function(){
 
-      var total = 3;
+      var total = 4;
       var loaded = 0;
       var loader = new THREE.TextureLoader();
 
@@ -103,6 +108,17 @@ module.exports = {
       loader.load( "images/fire.png", function( value){
 
         this.fireTexture = value;
+        //this.uniforms.map.value = value;
+
+        loaded++;
+
+        checkLoadStatus();
+
+       }.bind(this));
+
+      loader.load( "images/sparks.png", function( value){
+
+        this.sparkTexture = value;
         //this.uniforms.map.value = value;
 
         loaded++;
@@ -147,6 +163,18 @@ module.exports = {
 
     },
 
+    initGUI: function(){
+
+      this.settings = {
+        goatBurned: 0.0001,
+        fireIntensity: 0.90
+      };
+
+      var gui = new dat.GUI();
+      gui.add(this.settings, 'goatBurned', 0, 1);
+      gui.add(this.settings, 'fireIntensity', 0, 1);
+
+    },
 
 
     start: function() {
@@ -169,13 +197,10 @@ module.exports = {
 
       this.scene = new THREE.Scene();
 
-      var scene = this.scene;
-
       this.mainContainer = new THREE.Object3D();
       this.mainContainer.rotation.y = Math.PI*0.5;
       this.scene.add(this.mainContainer);
-      var data = require('./goatscene.json');
-      var mainData = require('./mainscene.json');
+
 
       this.projectionVector = new THREE.Vector3();
 
@@ -185,58 +210,68 @@ module.exports = {
       //matrix.fromArray( mainData.object.children[0].matrix );
       //matrix.decompose( this.camera.position, this.camera.quaternion, this.camera.scale );
 
-      this.camera.position.set(-40,20,-20);
+      this.camera.position.set(-30,10,-10);
 
       this.renderer = new THREE.WebGLRenderer({
         alpha: false
       });
-      this.renderer.shadowMap.enabled = true;
-      this.renderer.shadowMap.type = THREE.PCFShadowMap;
+      //this.renderer.shadowMap.enabled = true;
+      //this.renderer.shadowMap.type = THREE.PCFShadowMap;
+      this.renderer.shadowMapEnabled = true;
+      this.renderer.shadowMapSoft = true;
 
       this.threeEl.appendChild(this.renderer.domElement);
 
-      //this.renderer.shadowMapEnabled = true;
-      //this.renderer.shadowMapSoft = true;
+
 
       this.renderer.setSize(window.innerWidth - 1, window.innerHeight - 1);
 
       this.gammaInput = true;
       this.gammaOutput = true;
 
-      var goatdata = data.geometries[1];
-      var goatdata2 = data.geometries[0];
+      var goat1data = goatData.geometries[1];
+      var goat2data = goatData.geometries[0];
 
       var goatGeo = new THREE.BufferGeometry();
-      goatGeo.setIndex( new THREE.BufferAttribute( new Uint16Array(goatdata.data.index.array), 1 ) );
-      goatGeo.addAttribute( 'normal', new THREE.BufferAttribute( new Float32Array(goatdata.data.attributes.normal.array), 3 ) );
-      goatGeo.addAttribute( 'uv', new THREE.BufferAttribute( new Float32Array(goatdata.data.attributes.uv.array), 2 ) );
-      goatGeo.addAttribute( 'position', new THREE.BufferAttribute( new Float32Array(goatdata.data.attributes.position.array), 3 ) );
-      goatGeo.addAttribute( 'position2', new THREE.BufferAttribute( new Float32Array(goatdata2.data.attributes.position.array), 3 ) );
+      goatGeo.setIndex( new THREE.BufferAttribute( new Uint16Array(goat1data.data.index.array), 1 ) );
+      goatGeo.addAttribute( 'normal', new THREE.BufferAttribute( new Float32Array(goat1data.data.attributes.normal.array), 3 ) );
+      goatGeo.addAttribute( 'uv', new THREE.BufferAttribute( new Float32Array(goat1data.data.attributes.uv.array), 2 ) );
+      goatGeo.addAttribute( 'position', new THREE.BufferAttribute( new Float32Array(goat1data.data.attributes.position.array), 3 ) );
+      goatGeo.addAttribute( 'position2', new THREE.BufferAttribute( new Float32Array(goat2data.data.attributes.position.array), 3 ) );
 
-      var displacementArray = new Float32Array(goatdata.metadata.position);
+      var displacementArray = new Float32Array(goat1data.metadata.position);
 
       var smallest = 1000;
-      for (var i = 0; i < goatdata.metadata.position; i++) {
-        smallest = Math.min(smallest, goatdata.data.attributes.position.array[(i*3+1)]);
+      for (var i = 0; i < goat1data.metadata.position; i++) {
+        smallest = Math.min(smallest, goat1data.data.attributes.position.array[(i*3+1)]);
       }
 
-      for ( i = 0; i < goatdata.metadata.position; i++) {
-        displacementArray[i] = 1.3*goatdata.data.attributes.position.array[(i*3+1)]/(smallest);//4*goatdata.data.attributes.normal[i*3]//Math.random();//goatdata.metadata.position;
+      for ( i = 0; i < goat1data.metadata.position; i++) {
+        displacementArray[i] = 1.3*goat1data.data.attributes.position.array[(i*3+1)]/(smallest);//4*goat1data.data.attributes.normal[i*3]//Math.random();//goatData.metadata.position;
         displacementArray[i] += Math.random()*0.3;
 
-        if( Math.random() > 0.95 && goatdata.data.attributes.position.array[(i*3+1)] < 5 ) {
+        if( Math.random() > 0.97 && goat1data.data.attributes.position.array[(i*3+1)] < 5 ) {
           //create paricle spawn point
           this.createSpawnPoint(
-            new THREE.Vector3(goatdata.data.attributes.position.array[(i*3)],
-            goatdata.data.attributes.position.array[(i*3+1)],
-            goatdata.data.attributes.position.array[(i*3+2)])
+            new THREE.Vector3(goat1data.data.attributes.position.array[(i*3)],
+            goat1data.data.attributes.position.array[(i*3+1)],
+            goat1data.data.attributes.position.array[(i*3+2)])
+          );
+        }
+
+        if( Math.random() > 0.98 && goat1data.data.attributes.position.array[(i*3+1)] < 5 ) {
+          //create paricle spawn point
+          this.createSparkSpawnPoint(
+            new THREE.Vector3(goat1data.data.attributes.position.array[(i*3)],
+            goat1data.data.attributes.position.array[(i*3+1)],
+            goat1data.data.attributes.position.array[(i*3+2)])
           );
         }
       }
 
       goatGeo.addAttribute( 'displacement', new THREE.BufferAttribute( displacementArray, 1 ) );
-      goatGeo.boundingSphere = new THREE.Sphere( new THREE.Vector3(0,0,0), 100 );
-      goatGeo.uuid = goatdata.uuid;
+      //goatGeo.boundingSphere = new THREE.Sphere( new THREE.Vector3(0,0,0), 100 );
+      //goatGeo.uuid = goat1data.uuid;
 
       this.uniforms = THREE.UniformsUtils.merge( [
 
@@ -253,8 +288,9 @@ module.exports = {
 
         {
           "emissive" : { type: "c", value: new THREE.Color( 0x000000 ) },
-          "specular" : { type: "c", value: new THREE.Color( 0x111111 ) },
-          "shininess": { type: "f", value: 100 },
+          "specular" : { type: "c", value: new THREE.Color( 0x444444) },
+          "shininess": { type: "f", value: 10 },
+          "goatBurned": { type:"f", value: this.settings.goatBurned},
           "time": {type:"f",value:0}
         }
 
@@ -264,10 +300,8 @@ module.exports = {
       this.uniforms.normalMap.value = this.goatNormalMap;
       this.uniforms.normalScale.value = new THREE.Vector2(0.4,0.4);
 
-      this.uniforms.diffuse.value = new THREE.Color(0xffffff);
-
       //var defines = {'USE_MAP':'','DOUBLE_SIDED':''};
-      var defines = {'USE_MAP':'','USE_NORMALMAP':'','DOUBLE_SIDED':''};
+      var defines = {'USE_MAP':'','USE_NORMALMAP':'','USE_SHADOWMAP':''};
 
       var shaderMaterial = new THREE.ShaderMaterial({
           uniforms: this.uniforms,
@@ -283,10 +317,10 @@ module.exports = {
       });
 
       var goat = this.goat = new THREE.Mesh( goatGeo, shaderMaterial);
-      matrix.fromArray( data.object.children[1].matrix );
+      matrix.fromArray( goatData.object.children[1].matrix );
       matrix.decompose( goat.position, goat.quaternion, goat.scale );
       goat.castShadow = true;
-      goat.recieveShadow = true;
+      goat.receiveShadow = true;
       this.mainContainer.add(goat);
 
 
@@ -295,16 +329,7 @@ module.exports = {
 
       this.camera.lookAt(lookAtPos);
 
-      //wooden frame
-      var loader = new THREE.ObjectLoader();
-      var mainSceneParsed = loader.parse(mainData);
 
-      var frame = mainSceneParsed.children[1];
-      frame.material = new THREE.MeshLambertMaterial({color:0x000000});
-      frame.castShadow = true;
-      //matrix.fromArray( data.object.children[1].matrix );
-      //matrix.decompose( goat.position, goat.quaternion, goat.scale );
-      this.mainContainer.add(frame);
 
       //ground
       var plane = new THREE.Mesh( new THREE.PlaneGeometry(400,400,2,2),new THREE.MeshLambertMaterial({color:0x444444}));
@@ -312,12 +337,14 @@ module.exports = {
       plane.rotation.x = Math.PI*0.5;
       plane.receiveShadow = true;
       plane.castShadow = false;
-      plane.receiveShadow = true;
+      plane.receiveShadow = false;
 
 
+      this.initWoodenFrame();
       this.initLights();
 
-      this.startParticleEngine();
+      this.startFireParticleEngine();
+      this.startSparkParticleEngine();
 
       this.start();
 
@@ -326,7 +353,6 @@ module.exports = {
     },
 
     createSpawnPoint: function( pos ){
-
 
       pos.y *= -1;
 
@@ -341,25 +367,38 @@ module.exports = {
         this.scene.add(pointHelper);
       }
 
-      if( !this.spawnPoints){
-        this.spawnPoints = [];
+      if( !this.fireSpawnPoints){
+        this.fireSpawnPoints = [];
       }
 
-      //if( this.spawnPoints.length > 2 )
-      //  return;
+//      if( this.fireSpawnPoints.length > 2 )
+  //      return;
 
 
-      this.spawnPoints.push(pos);
+      this.fireSpawnPoints.push(pos);
 
     },
 
-    startParticleEngine: function(){
+    createSparkSpawnPoint: function( pos ){
 
-      var particles = this.spawnPoints.length;
+      pos.y *= -1;
+
+      if( !this.sparkSpawnPoints){
+        this.sparkSpawnPoints = [];
+      }
+
+      this.sparkSpawnPoints.push(pos);
+
+    },
+
+    startFireParticleEngine: function(){
+
+      var particles = this.fireSpawnPoints.length;
 
       this.fireTexture.wrapS = this.fireTexture.wrapT = THREE.ClampWrapping;
 
       this.particleUniforms = {
+        effect:      { type: "f", value:0 },
         time:      { type: "f", value:0 },
         color:     { type: "c", value: new THREE.Color( 0xffffff ) },
         texture:   { type: "t", value: this.fireTexture }
@@ -389,9 +428,9 @@ module.exports = {
 
       for ( var i = 0, i2 = 0 , i3 = 0; i < particles; i ++, i2 += 2, i3 += 3 ) {
 
-        positions[ i3 + 0 ] = this.spawnPoints[i].x;
-        positions[ i3 + 1 ] = this.spawnPoints[i].y;
-        positions[ i3 + 2 ] = this.spawnPoints[i].z;
+        positions[ i3 + 0 ] = this.fireSpawnPoints[i].x;
+        positions[ i3 + 1 ] = this.fireSpawnPoints[i].y;
+        positions[ i3 + 2 ] = this.fireSpawnPoints[i].z;
 
         offsets[i2] = Math.floor( Math.random()*4)/4;
         offsets[i2+1] = Math.floor( Math.random()*4)/4;
@@ -418,6 +457,83 @@ module.exports = {
       this.particleSystem = new THREE.Points( geometry, particleMaterial );
 
       this.scene.add( this.particleSystem );
+    },
+
+    startSparkParticleEngine: function(){
+
+      var particles = this.sparkSpawnPoints.length;
+
+      this.sparkParticleUniforms = {
+        effect:      { type: "f", value:1 },
+        time:      { type: "f", value:0 },
+        color:     { type: "c", value: new THREE.Color( 0xffffff ) },
+        texture:   { type: "t", value: this.sparkTexture }
+
+      };
+
+      var sparkParticleMaterial = new THREE.ShaderMaterial( {
+
+        uniforms:       this.sparkParticleUniforms,
+        vertexShader:   require('./spark_vs.glsl'),
+        fragmentShader: require('./spark_fs.glsl'),
+
+        blending:       THREE.AdditiveBlending,
+        depthTest:      false,
+        transparent:    true
+      });
+
+      var geometry = new THREE.BufferGeometry();
+
+      var positions = new Float32Array( particles * 3 );
+      var colors = new Float32Array( particles * 3 );
+      var sizes = new Float32Array( particles );
+      var start = new Float32Array( particles );
+      var rotation = new Float32Array( particles );
+      var offsets = new Float32Array( particles * 2 );
+      var color = new THREE.Color(1,1,1);
+
+      for ( var i = 0, i2 = 0 , i3 = 0; i < particles; i ++, i2 += 2, i3 += 3 ) {
+
+        positions[ i3 + 0 ] = this.sparkSpawnPoints[i].x;
+        positions[ i3 + 1 ] = this.sparkSpawnPoints[i].y;
+        positions[ i3 + 2 ] = this.sparkSpawnPoints[i].z;
+
+        offsets[i2] = Math.floor( Math.random()*4)/4;
+        offsets[i2+1] = Math.floor( Math.random()*4)/4;
+        start[i] = Math.random();
+        rotation[i] = Math.random()*2-1;
+
+        var intensity = Math.random()*0.5+1;
+        colors[ i3 + 0 ] = color.r*intensity;
+        colors[ i3 + 1 ] = color.g*intensity;
+        colors[ i3 + 2 ] = color.b*intensity;
+
+        sizes[ i ] = 2;
+      }
+
+      geometry.addAttribute( 'position', new THREE.BufferAttribute( positions, 3 ) );
+      geometry.addAttribute( 'customColor', new THREE.BufferAttribute( colors, 3 ) );
+      geometry.addAttribute( 'size', new THREE.BufferAttribute( sizes, 1 ) );
+      geometry.addAttribute( 'start', new THREE.BufferAttribute( start, 1 ) );
+      geometry.addAttribute( 'offset', new THREE.BufferAttribute( offsets, 2 ) );
+      geometry.addAttribute( 'rotation', new THREE.BufferAttribute( rotation, 1 ) );
+
+      this.sparkParticleSystem = new THREE.Points( geometry, sparkParticleMaterial );
+
+      this.scene.add( this.sparkParticleSystem );
+    },
+
+    initWoodenFrame: function(){
+      //wooden frame
+      var loader = new THREE.ObjectLoader();
+      var mainSceneParsed = loader.parse(mainSceneData);
+
+      var frame = mainSceneParsed.children[1];
+      frame.material = new THREE.MeshLambertMaterial({color:0x000000});
+      frame.castShadow = true;
+      //matrix.fromArray( data.object.children[1].matrix );
+      //matrix.decompose( goat.position, goat.quaternion, goat.scale );
+      this.mainContainer.add(frame);
     },
 
     initLights: function(){
@@ -463,13 +579,16 @@ module.exports = {
 
       this.mainContainer.rotation.y = (this.mouse2d.x+1)/2*3 + Math.PI*0.5;
       this.particleSystem.rotation.y = (this.mouse2d.x+1)/2*3;
+      this.sparkParticleSystem.rotation.y = (this.mouse2d.x+1)/2*3;
 
-      //this.goat.morphTargetInfluences[0] = (this.mouse2d.x+1)/2;
-
+      this.sparkParticleUniforms.time.value += 0.005;//(this.mouse2d.x+1)/2 * 4;
+      this.sparkParticleUniforms.effect.value = this.settings.fireIntensity;
       this.particleUniforms.time.value += 0.005;//(this.mouse2d.x+1)/2 * 4;
+      this.particleUniforms.effect.value = this.settings.fireIntensity;
 
       this.uniforms.time.value += 0.005;//(this.mouse2d.x+1)/2 * 4;
 
+      this.uniforms.goatBurned.value = this.settings.goatBurned;
       this.renderer.render(this.scene, this.camera);
 
     },

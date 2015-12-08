@@ -38,9 +38,9 @@ void main() {
   vColor = customColor;
   vOffset = offset;
 
-  vec3 mid = vec3(0.0, 20.5, 0.0);
+  vec3 mid = vec3(position.x+2.0, 12.5, position.z+2.0);
   //vec3 rpos = rotateAngleAxis(start+time, vec3(mod(start,16.0), -8.0+mod(start,15.0), 1.0), position - mid) + mid;
-  vec3 rpos = rotateAngleAxis(start+time*2.0, vec3(0.0, 0.5, 0.0), position - mid) + mid;
+  vec3 rpos = rotateAngleAxis(start+time*12.0*rotation*effect, vec3(0.0, 0.0, 1.0), position - mid) + mid;
   //vec3 rpos = position.xyz;
 
   //vec4 fpos = vec4(rpos,1.0);//vec4( mix(position,rpos,0.5), 1.0 );
@@ -56,7 +56,7 @@ void main() {
   lifePosition = clamp(distFromSpawnPoint/offsetTarget,0.0,1.0);
   mvPosition.y += distFromSpawnPoint;
 
-  mvPosition.y += lifePosition*5.0;
+  mvPosition.y += lifePosition*15.0;
 
   gl_PointSize = size * (lifePosition*4.0);
 

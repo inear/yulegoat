@@ -1,5 +1,6 @@
 #define PHONG
 uniform float time;
+uniform float goatBurned;
 varying float v_displaced;
 uniform vec3 diffuse;
 uniform vec3 emissive;
@@ -901,10 +902,10 @@ totalSpecularLight *= shadowMask;
 #endif
   gl_FragColor = vec4( outgoingLight, diffuseColor.a );
 
-  float alpha = (1.5-v_displaced*v_displaced*1.0*time);
+  float alpha = (1.5-v_displaced*v_displaced*goatBurned);
   //alpha = 1.0;
   alpha = smoothstep(0.7,1.0,alpha);
-  //gl_FragColor = vec4( outgoingLight*(1.0-v_displaced*abs(sin(time))), alpha );
+  gl_FragColor = vec4( outgoingLight*(1.0-v_displaced*goatBurned), alpha );
   //gl_FragColor = vec4( outgoingLight*(1.0-v_displaced*time*2.0), alpha );
 
 }
