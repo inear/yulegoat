@@ -39,15 +39,10 @@ void main() {
   vOffset = offset;
 
   vec3 mid = vec3(position.x+2.0, 12.5, position.z+2.0);
-  //vec3 rpos = rotateAngleAxis(start+time, vec3(mod(start,16.0), -8.0+mod(start,15.0), 1.0), position - mid) + mid;
   vec3 rpos = rotateAngleAxis(start+time*12.0*rotation*effect, vec3(0.0, 0.0, 1.0), position - mid) + mid;
-  //vec3 rpos = position.xyz;
-
-  //vec4 fpos = vec4(rpos,1.0);//vec4( mix(position,rpos,0.5), 1.0 );
   vec4 fpos = vec4( mix(position,rpos,position.y*0.1), 1.0 );
 
-  //pos.y += 5.0*sin(time*2.0);
-  float offsetTarget = 4.0*(mod(time,0.001)+0.5);
+  float offsetTarget = 2.0*(mod(time,0.001)+0.5);
 
   vColor.rbg = vColor.rbg*vec3(offsetTarget-(fpos.y-5.0));
 

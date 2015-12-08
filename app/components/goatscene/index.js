@@ -210,7 +210,7 @@ module.exports = {
       //matrix.fromArray( mainData.object.children[0].matrix );
       //matrix.decompose( this.camera.position, this.camera.quaternion, this.camera.scale );
 
-      this.camera.position.set(-30,10,-10);
+      this.camera.position.set(-30,20,-10);
 
       this.renderer = new THREE.WebGLRenderer({
         alpha: false
@@ -508,7 +508,7 @@ module.exports = {
         colors[ i3 + 1 ] = color.g*intensity;
         colors[ i3 + 2 ] = color.b*intensity;
 
-        sizes[ i ] = 2;
+        sizes[ i ] = 5;
       }
 
       geometry.addAttribute( 'position', new THREE.BufferAttribute( positions, 3 ) );
