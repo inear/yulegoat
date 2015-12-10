@@ -7,6 +7,7 @@ var cfg = require('../config');
 var bundleLogger = require('../utils/time-logger')('bundle');
 var errorNotif = require('../utils/error-notification');
 
+
 gulp.task('browserify', function() {
   var bundler = require('browserify')({
     entries: cfg.entry.scripts,
@@ -49,4 +50,6 @@ function applyTransform(bundler) {
   }));
 
   bundler.transform(require('stringify')(['.glsl', '.html']));
+
+
 }

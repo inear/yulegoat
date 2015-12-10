@@ -3,6 +3,7 @@
 var _ = require('lodash');
 var fs = require('fs');
 var THREE = require('three');
+var WAGNER = require('wagner');
 var raf = require('raf');
 var TimelineMax = require('timelinemax');
 var TweenMax = require('tweenmax');
@@ -94,62 +95,49 @@ module.exports = {
       var loaded = 0;
       var loader = new THREE.TextureLoader();
 
-      loader.load( "images/bock_map.jpg", function( value){
-
-        this.goatMap = value;
-        //this.uniforms.map.value = value;
-
-        loaded++;
-
-        checkLoadStatus();
-
-       }.bind(this));
-
-      loader.load( "images/fire.png", function( value){
-
-        this.fireTexture = value;
-        //this.uniforms.map.value = value;
-
-        loaded++;
-
-        checkLoadStatus();
-
-       }.bind(this));
-
-      loader.load( "images/sparks.png", function( value){
-
-        this.sparkTexture = value;
-        //this.uniforms.map.value = value;
-
-        loaded++;
-
-        checkLoadStatus();
-
-       }.bind(this));
-
-      loader.load( "images/bock_normal.jpg", function( value){
-
-        this.goatNormalMap = value;
-        //this.uniforms.map.value = value;
-
-        loaded++;
-
-        checkLoadStatus();
-
-       }.bind(this));
+      var images = [
+        { id:'snow', url:'images/snow.jpg'},
+        { id:'snowNormal', url:'images/snow2.jpg'},
+        { id:'goatMap', url:'images/bock_map.jpg'},
+        { id:'fireTexture', url:'images/fire.png'},
+        { id:'sparkTexture', url:'images/sparks.png'},
+        { id:'goatNormalMap', url:'images/bock_normal.jpg'},
+      ];
 
       var scope = this;
+      var index = -1;
 
-      function checkLoadStatus(){
-        if( loaded === total) {
+      this.textureLib = [];
+
+      function loadNext(){
+        index++;
+        var item = images[index];
+
+        if( !item ) {
           scope.init3D();
+          return;
         }
+
+        console.log("load texture:" + item.id);
+
+        loader.load( item.url, function( value){
+
+          scope.textureLib[item.id] = value;
+
+          //this.uniforms.map.value = value;
+          console.log("texture " + item.id + ": loaded", value);
+
+          loadNext();
+
+        });
       }
+
+      loadNext();
+
     },
 
     onPreload: function() {
       console.log("onPreload");
-
 
         //var self = this;
         Vue.nextTick(function() {
@@ -157,22 +145,27 @@ module.exports = {
           this.$dispatch('init-complete');
         }, this);
 
-
-
-
-
     },
 
     initGUI: function(){
 
       this.settings = {
         goatBurned: 0.0001,
-        fireIntensity: 0.90
+        fireIntensity: 0.90,
+
+        zoomBlurStrength:0.13001,
+        bloomBlur:2.001,
+        brightness:0.9,
+        contrast:0.9
       };
 
       var gui = new dat.GUI();
-      gui.add(this.settings, 'goatBurned', 0, 1);
-      gui.add(this.settings, 'fireIntensity', 0, 1);
+      gui.add(this.settings, 'goatBurned', 0, 4);
+      gui.add(this.settings, 'fireIntensity', 0, 2);
+      gui.add(this.settings, 'bloomBlur', 0, 5);
+      gui.add(this.settings, 'zoomBlurStrength', 0, 1);
+      gui.add(this.settings, 'brightness', 0, 4);
+      gui.add(this.settings, 'contrast', 0, 3);
 
     },
 
@@ -202,32 +195,42 @@ module.exports = {
       this.scene.add(this.mainContainer);
 
 
-      this.projectionVector = new THREE.Vector3();
-
       this.camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, 1100);
       this.scene.add(this.camera);
-
+      this.scene.fog = new THREE.Fog( 0x111122, 0, 1000 ) ;
       //matrix.fromArray( mainData.object.children[0].matrix );
       //matrix.decompose( this.camera.position, this.camera.quaternion, this.camera.scale );
 
-      this.camera.position.set(-30,20,-10);
+      this.camera.position.set(-30,5,-10);
 
       this.renderer = new THREE.WebGLRenderer({
         alpha: false
       });
-      //this.renderer.shadowMap.enabled = true;
-      //this.renderer.shadowMap.type = THREE.PCFShadowMap;
-      this.renderer.shadowMapEnabled = true;
-      this.renderer.shadowMapSoft = true;
+      this.renderer.setSize(window.innerWidth - 1, window.innerHeight - 1);
+      this.renderer.setClearColor(0x111122,1);
+      this.renderer.physicallyBasedShading = true;
 
       this.threeEl.appendChild(this.renderer.domElement);
 
-
-
-      this.renderer.setSize(window.innerWidth - 1, window.innerHeight - 1);
-
       this.gammaInput = true;
       this.gammaOutput = true;
+
+      //post effects
+      WAGNER.vertexShadersPath = '/vertex-shaders';
+      WAGNER.fragmentShadersPath = '/fragment-shaders';
+      WAGNER.assetsPath = '/images';
+
+      this.composer = new WAGNER.Composer( this.renderer, { useRGBA: false } );
+      this.composer.setSize(window.innerWidth,window.innerHeight);
+      this.bloomPass = new WAGNER.MultiPassBloomPass();
+      this.bloomPass.params.blurAmount = this.settings.blurAmount;
+      this.bloomPass.params.applyZoomBlur = false;
+      this.bloomPass.params.zoomBlurCenter = new THREE.Vector2( 0,1.5 );;
+      this.bloomPass.brightnessContrastPass.params.brightness = 1;
+      this.bloomPass.brightnessContrastPass.params.contrast = 1;
+
+      this.vignettePass = new WAGNER.VignettePass();
+      this.vignettePass.params.amount = 0.7;
 
       var goat1data = goatData.geometries[1];
       var goat2data = goatData.geometries[0];
@@ -284,7 +287,6 @@ module.exports = {
         THREE.UniformsLib[ "displacementmap" ],
         THREE.UniformsLib[ "fog" ],
         THREE.UniformsLib[ "lights" ],
-        THREE.UniformsLib[ "shadowmap" ],
 
         {
           "emissive" : { type: "c", value: new THREE.Color( 0x000000 ) },
@@ -296,12 +298,12 @@ module.exports = {
 
       ]);
 
-      this.uniforms.map.value = this.goatMap;
-      this.uniforms.normalMap.value = this.goatNormalMap;
+      this.uniforms.map.value = this.textureLib.goatMap;
+      this.uniforms.normalMap.value = this.textureLib.goatNormalMap;
       this.uniforms.normalScale.value = new THREE.Vector2(0.4,0.4);
 
       //var defines = {'USE_MAP':'','DOUBLE_SIDED':''};
-      var defines = {'USE_MAP':'','USE_NORMALMAP':'','USE_SHADOWMAP':''};
+      var defines = {'USE_MAP':'','USE_NORMALMAP':''};
 
       var shaderMaterial = new THREE.ShaderMaterial({
           uniforms: this.uniforms,
@@ -319,8 +321,7 @@ module.exports = {
       var goat = this.goat = new THREE.Mesh( goatGeo, shaderMaterial);
       matrix.fromArray( goatData.object.children[1].matrix );
       matrix.decompose( goat.position, goat.quaternion, goat.scale );
-      goat.castShadow = true;
-      goat.receiveShadow = true;
+
       this.mainContainer.add(goat);
 
 
@@ -332,13 +333,17 @@ module.exports = {
 
 
       //ground
-      var plane = new THREE.Mesh( new THREE.PlaneGeometry(400,400,2,2),new THREE.MeshLambertMaterial({color:0x444444}));
+
+      var plane = new THREE.Mesh(
+        new THREE.PlaneGeometry(400,400,12,12),
+        new THREE.MeshPhongMaterial({
+          map:this.textureLib.snow,
+          normalMap:this.textureLib.snowNormal,
+          color:0x777799
+        })
+      );
       goat.add(plane);
       plane.rotation.x = Math.PI*0.5;
-      plane.receiveShadow = true;
-      plane.castShadow = false;
-      plane.receiveShadow = false;
-
 
       this.initWoodenFrame();
       this.initLights();
@@ -371,10 +376,6 @@ module.exports = {
         this.fireSpawnPoints = [];
       }
 
-//      if( this.fireSpawnPoints.length > 2 )
-  //      return;
-
-
       this.fireSpawnPoints.push(pos);
 
     },
@@ -395,13 +396,15 @@ module.exports = {
 
       var particles = this.fireSpawnPoints.length;
 
-      this.fireTexture.wrapS = this.fireTexture.wrapT = THREE.ClampWrapping;
+      this.textureLib.fireTexture.wrapS = this.textureLib.fireTexture.wrapT = THREE.ClampWrapping;
+
+      var scope = this;
 
       this.particleUniforms = {
         effect:      { type: "f", value:0 },
         time:      { type: "f", value:0 },
         color:     { type: "c", value: new THREE.Color( 0xffffff ) },
-        texture:   { type: "t", value: this.fireTexture }
+        texture:   { type: "t", value: this.textureLib.fireTexture }
 
       };
 
@@ -467,7 +470,7 @@ module.exports = {
         effect:      { type: "f", value:1 },
         time:      { type: "f", value:0 },
         color:     { type: "c", value: new THREE.Color( 0xffffff ) },
-        texture:   { type: "t", value: this.sparkTexture }
+        texture:   { type: "t", value: this.textureLib.sparkTexture }
 
       };
 
@@ -551,7 +554,7 @@ module.exports = {
       light = new THREE.AmbientLight(0x222222, 0.2);
       this.scene.add(light);
 
-
+/*
       light = new THREE.SpotLight( 0xffffff, 0.8, 30,10 );
       //var helper = new THREE.SpotLightHelper(light);
       //this.scene.add(helper);
@@ -568,7 +571,7 @@ module.exports = {
       light.shadowDarkness = 0.5;
       light.shadowMapWidth = 1024;
       light.shadowMapHeight = 1024;
-      this.scene.add(light);
+      this.scene.add(light);*/
     },
 
     render: function() {
@@ -589,7 +592,21 @@ module.exports = {
       this.uniforms.time.value += 0.005;//(this.mouse2d.x+1)/2 * 4;
 
       this.uniforms.goatBurned.value = this.settings.goatBurned;
-      this.renderer.render(this.scene, this.camera);
+
+
+      this.bloomPass.params.zoomBlurStrength = this.settings.zoomBlurStrength;
+      this.bloomPass.params.blurAmount = this.settings.bloomBlur;
+      this.bloomPass.brightnessContrastPass.params.brightness = this.settings.brightness;
+      this.bloomPass.brightnessContrastPass.params.contrast = this.settings.contrast;
+
+      //this.renderer.render(this.scene, this.camera);
+      this.renderer.autoClearColor = true;
+      this.composer.reset();
+      this.composer.render(this.scene, this.camera);
+      this.composer.pass(this.bloomPass);
+      this.composer.pass(this.vignettePass);
+      this.composer.toScreen();
+
 
     },
 
@@ -605,6 +622,7 @@ module.exports = {
       this.camera.updateProjectionMatrix();
 
       this.renderer.setSize(w, h);
+      this.composer.setSize(w, h);
 
     }
   }
