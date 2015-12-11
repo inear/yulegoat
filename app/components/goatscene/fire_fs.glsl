@@ -7,6 +7,7 @@ varying float lifePosition;
 varying vec2 vOffset;
 varying float vRotation;
 varying vec3 vColor;
+varying vec3 vWorldPos;
 
 
 void main() {
@@ -17,6 +18,7 @@ void main() {
 
   vec2 repeat = vec2(0.25,0.25);
   vec2 uv = vec2( gl_PointCoord.x, 1.0 - gl_PointCoord.y );
+
   vec4 tex = texture2D( texture, uv * repeat + offset );
 
   gl_FragColor = vec4( color * vColor, mix((1.0-lifePosition)*effect,0.0,(1.0-lifePosition)/1.0*effect) );

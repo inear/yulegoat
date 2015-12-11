@@ -102,6 +102,8 @@ module.exports = {
         { id:'fireTexture', url:'images/fire.png'},
         { id:'sparkTexture', url:'images/sparks.png'},
         { id:'goatNormalMap', url:'images/bock_normal.jpg'},
+        { id:'facade', url:'images/facade2.jpg'},
+        { id:'facadeSpec', url:'images/facade-spec.jpg'},
       ];
 
       var scope = this;
@@ -118,14 +120,9 @@ module.exports = {
           return;
         }
 
-        console.log("load texture:" + item.id);
-
         loader.load( item.url, function( value){
 
           scope.textureLib[item.id] = value;
-
-          //this.uniforms.map.value = value;
-          console.log("texture " + item.id + ": loaded", value);
 
           loadNext();
 
@@ -172,7 +169,6 @@ module.exports = {
 
     start: function() {
 
-
       this.isRunning = true;
       this.render();
       this.onResize();
@@ -185,8 +181,6 @@ module.exports = {
     },
 
     init3D: function() {
-
-      var matrix = new THREE.Matrix4();
 
       this.scene = new THREE.Scene();
 
@@ -201,7 +195,7 @@ module.exports = {
       //matrix.fromArray( mainData.object.children[0].matrix );
       //matrix.decompose( this.camera.position, this.camera.quaternion, this.camera.scale );
 
-      this.camera.position.set(-30,5,-10);
+      this.camera.position.set(-30,15,-10);
 
       this.renderer = new THREE.WebGLRenderer({
         alpha: false
@@ -225,12 +219,51 @@ module.exports = {
       this.bloomPass = new WAGNER.MultiPassBloomPass();
       this.bloomPass.params.blurAmount = this.settings.blurAmount;
       this.bloomPass.params.applyZoomBlur = false;
-      this.bloomPass.params.zoomBlurCenter = new THREE.Vector2( 0,1.5 );;
+      this.bloomPass.params.zoomBlurCenter = new THREE.Vector2( 0,1.5 );
       this.bloomPass.brightnessContrastPass.params.brightness = 1;
       this.bloomPass.brightnessContrastPass.params.contrast = 1;
 
       this.vignettePass = new WAGNER.VignettePass();
       this.vignettePass.params.amount = 0.7;
+
+
+      this.initGoat();
+
+      this.initFence();
+
+
+      //ground
+      var plane = new THREE.Mesh(
+        new THREE.PlaneGeometry(400,400,2,2),
+        new THREE.MeshLambertMaterial({
+          map:this.textureLib.snow,
+          normalMap:this.textureLib.snowNormal,
+          color:0x777799
+        })
+      );
+      this.goat.add(plane);
+      plane.rotation.x = Math.PI*0.5;
+
+      this.initWoodenFrame();
+      this.initLights();
+      this.createSceneObjects();
+      this.startFireParticleEngine();
+      this.startSparkParticleEngine();
+
+      //camera rotation
+      var lookAtPos = this.goat.position.clone();
+      lookAtPos.y += 5;
+      this.camera.lookAt(lookAtPos);
+
+      this.start();
+
+
+
+    },
+
+    initGoat: function(){
+
+      var matrix = new THREE.Matrix4();
 
       var goat1data = goatData.geometries[1];
       var goat2data = goatData.geometries[0];
@@ -313,7 +346,6 @@ module.exports = {
           fragmentShader: require('./goat_fs.glsl'),
           //fragmentShader: THREE.ShaderLib.phong.fragmentShader,
           lights:true,
-          shading: THREE.SmoothShaded,
           transparent:true,
           derivatives:true
       });
@@ -323,38 +355,6 @@ module.exports = {
       matrix.decompose( goat.position, goat.quaternion, goat.scale );
 
       this.mainContainer.add(goat);
-
-
-      var lookAtPos = this.goat.position.clone();
-      lookAtPos.y += 5;
-
-      this.camera.lookAt(lookAtPos);
-
-
-
-      //ground
-
-      var plane = new THREE.Mesh(
-        new THREE.PlaneGeometry(400,400,12,12),
-        new THREE.MeshPhongMaterial({
-          map:this.textureLib.snow,
-          normalMap:this.textureLib.snowNormal,
-          color:0x777799
-        })
-      );
-      goat.add(plane);
-      plane.rotation.x = Math.PI*0.5;
-
-      this.initWoodenFrame();
-      this.initLights();
-
-      this.startFireParticleEngine();
-      this.startSparkParticleEngine();
-
-      this.start();
-
-
-
     },
 
     createSpawnPoint: function( pos ){
@@ -398,8 +398,6 @@ module.exports = {
 
       this.textureLib.fireTexture.wrapS = this.textureLib.fireTexture.wrapT = THREE.ClampWrapping;
 
-      var scope = this;
-
       this.particleUniforms = {
         effect:      { type: "f", value:0 },
         time:      { type: "f", value:0 },
@@ -442,7 +440,7 @@ module.exports = {
 
         //color.setHSL( i / particles, 1.0, 0.5 );
 
-        var intensity = Math.random()*0.5+0.3;
+        var intensity = Math.floor(Math.random()*3)*0.3;
         colors[ i3 + 0 ] = color.r*intensity;
         colors[ i3 + 1 ] = color.g*intensity;
         colors[ i3 + 2 ] = color.b*intensity;
@@ -526,12 +524,27 @@ module.exports = {
       this.scene.add( this.sparkParticleSystem );
     },
 
-    initWoodenFrame: function(){
+
+    initFence: function(){
       //wooden frame
       var loader = new THREE.ObjectLoader();
       var mainSceneParsed = loader.parse(mainSceneData);
 
       var frame = mainSceneParsed.children[1];
+      frame.material = new THREE.MeshLambertMaterial({color:0x444400});
+      frame.castShadow = true;
+      //matrix.fromArray( data.object.children[1].matrix );
+      //matrix.decompose( goat.position, goat.quaternion, goat.scale );
+      this.mainContainer.add(frame);
+    },
+
+
+    initWoodenFrame: function(){
+      //wooden frame
+      var loader = new THREE.ObjectLoader();
+      var mainSceneParsed = loader.parse(mainSceneData);
+
+      var frame = mainSceneParsed.children[2];
       frame.material = new THREE.MeshLambertMaterial({color:0x000000});
       frame.castShadow = true;
       //matrix.fromArray( data.object.children[1].matrix );
@@ -540,19 +553,21 @@ module.exports = {
     },
 
     initLights: function(){
-       var light = new THREE.PointLight(0xffffff, 0.7);
+      var light = new THREE.PointLight(0xffffff, 1.2, 10);
+      light.position.copy(this.goat.position);
+      light.position.y += 2;
+      light.position.z += 1;
 
-      light.position.x = -50;
-      light.position.y = 60;
-      light.position.z = 50;
-      this.scene.add(light);
+      this.mainContainer.add(light);
+
+
 
       light = new THREE.DirectionalLight(0xffffff, 0.7);
-      //light.position.set(-40, 400, 0);
+      light.position.set(100, 400, -100);
       this.scene.add(light);
 
-      light = new THREE.AmbientLight(0x222222, 0.2);
-      this.scene.add(light);
+      //light = new THREE.AmbientLight(0x222222, 0.2);
+      //this.scene.add(light);
 
 /*
       light = new THREE.SpotLight( 0xffffff, 0.8, 30,10 );
@@ -572,6 +587,148 @@ module.exports = {
       light.shadowMapWidth = 1024;
       light.shadowMapHeight = 1024;
       this.scene.add(light);*/
+    },
+
+    createSceneObjects: function(){
+
+      var b1,b2,h,material;
+
+      this.textureLib.facade.wrapS = this.textureLib.facade.wrapT = THREE.RepeatWrapping;
+      this.textureLib.facadeSpec.wrapS = this.textureLib.facadeSpec.wrapT = THREE.RepeatWrapping;
+
+      var phongShader = THREE.ShaderLib.phong;
+
+      var uniforms = THREE.UniformsUtils.clone(phongShader.uniforms);
+
+      uniforms.map.value = this.textureLib.facade;
+      uniforms.specularMap.value = this.textureLib.facadeSpec;
+      uniforms.diffuse.value.set(0xffffff);
+      uniforms.specular.value.set( 0x333333);
+
+      uniforms.shininess.value = 20;
+
+      uniforms.offsetRepeat.value.set( 0, -1, 6, 3 );
+
+      var vertexShader = [
+
+        "#define PHONG",
+
+        "varying vec3 vViewPosition;",
+        "varying vec3 vNormal;",
+
+        THREE.ShaderChunk[ "common" ],
+        THREE.ShaderChunk[ "uv_pars_vertex" ],
+        THREE.ShaderChunk[ "lights_phong_pars_vertex" ],
+        THREE.ShaderChunk[ "color_pars_vertex" ],
+        THREE.ShaderChunk[ "logdepthbuf_pars_vertex" ],
+
+        "void main() {",
+        THREE.ShaderChunk[ "uv_vertex" ],
+        THREE.ShaderChunk[ "color_vertex" ],
+        THREE.ShaderChunk[ "beginnormal_vertex" ],
+        THREE.ShaderChunk[ "defaultnormal_vertex" ],
+        " vNormal = normalize( transformedNormal );",
+        THREE.ShaderChunk[ "begin_vertex" ],
+        THREE.ShaderChunk[ "project_vertex" ],
+        " vViewPosition = -mvPosition.xyz;",
+        THREE.ShaderChunk[ "worldpos_vertex" ],
+        THREE.ShaderChunk[ "lights_phong_vertex" ],
+        "}"
+
+      ].join("\n");
+
+      var fragmentShader = [
+
+        "#define PHONG",
+
+        "uniform vec3 diffuse;",
+        "uniform float opacity;",
+
+        "uniform vec3 ambient;",
+        "uniform vec3 emissive;",
+        "uniform vec3 specular;",
+        "uniform float shininess;",
+
+        THREE.ShaderChunk[ "common" ],
+        THREE.ShaderChunk[ "color_pars_fragment" ],
+        THREE.ShaderChunk[ "uv_pars_fragment" ],
+        THREE.ShaderChunk[ "map_pars_fragment" ],
+        THREE.ShaderChunk[ "alphamap_pars_fragment" ],
+        THREE.ShaderChunk[ "aomap_pars_fragment" ],
+        THREE.ShaderChunk[ "lightmap_pars_fragment" ],
+        THREE.ShaderChunk[ "emissivemap_pars_fragment" ],
+        THREE.ShaderChunk[ "envmap_pars_fragment" ],
+        THREE.ShaderChunk[ "fog_pars_fragment" ],
+        THREE.ShaderChunk[ "lights_phong_pars_fragment" ],
+        THREE.ShaderChunk[ "shadowmap_pars_fragment" ],
+        THREE.ShaderChunk[ "bumpmap_pars_fragment" ],
+        THREE.ShaderChunk[ "normalmap_pars_fragment" ],
+        THREE.ShaderChunk[ "specularmap_pars_fragment" ],
+        THREE.ShaderChunk[ "logdepthbuf_pars_fragment" ],
+
+        "void main() {",
+
+        " vec3 outgoingLight = vec3( 0.0 );",
+      " vec4 diffuseColor = vec4( diffuse, opacity );",
+      " vec3 totalAmbientLight = ambientLightColor;",
+      " vec3 totalEmissiveLight = emissive;",
+      " vec3 shadowMask = vec3( 1.0 );",
+
+        THREE.ShaderChunk[ "map_fragment" ],
+        THREE.ShaderChunk[ "color_fragment" ],
+        THREE.ShaderChunk[ "specularmap_fragment" ],
+        THREE.ShaderChunk[ "normal_phong_fragment" ],
+        THREE.ShaderChunk[ "lights_phong_fragment" ],
+
+        " outgoingLight += diffuseColor.rgb * ( totalDiffuseLight + totalAmbientLight ) + totalSpecularLight + totalEmissiveLight;",
+
+
+        THREE.ShaderChunk[ "linear_to_gamma_fragment" ],
+
+        THREE.ShaderChunk[ "fog_fragment" ],
+
+        " gl_FragColor = vec4( outgoingLight, diffuseColor.a );",
+
+        "gl_FragColor.rgb = gl_FragColor.rgb + specularStrength*vec3(0.95,1.0,0.46)*0.6;",
+
+        "}"
+
+      ].join("\n");
+
+      var defines = {'USE_MAP':'','USE_SPECULARMAP':''};
+
+      var buildingMat = new THREE.ShaderMaterial({
+        defines:defines,
+        uniforms: uniforms,
+        vertexShader: vertexShader,
+        fragmentShader: fragmentShader,
+        lights:true,
+        derivatives:true,
+        fog: true
+      });
+
+      //buildingMat = new THREE.MeshPhongMaterial({map:facadeTexture, specularMap: facadeSpecTexture});
+
+      //var uniformClone = THREE.UniformsUtils.clone( uniforms );
+
+      this.totalSets = 10;
+var radius = 120;
+      for (var i = 0; i < this.totalSets; i++) {
+
+          material = buildingMat;
+
+          h = 18+Math.random()*10;
+          b1 = new THREE.Mesh(new THREE.BoxGeometry(60,h,60), material);
+          b1.position.x = Math.cos (2 * Math.PI * i/this.totalSets)*radius;
+          b1.position.z = Math.sin (2 * Math.PI * i/this.totalSets)*radius;
+          b1.position.y = h*0.5;
+
+          b1.rotation.y = -1*Math.PI/180;
+          this.mainContainer.add(b1);
+
+
+      }
+
     },
 
     render: function() {

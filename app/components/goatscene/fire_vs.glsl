@@ -9,7 +9,9 @@ attribute float rotation;
 attribute float start;
 attribute vec3 customColor;
 
+
 varying float vRotation;
+varying vec3 vWorldPos;
 varying vec3 vColor;
 varying float lifePosition;
 
@@ -58,7 +60,10 @@ void main() {
 
   mvPosition.y += lifePosition*5.0;
 
-  gl_PointSize = size * (lifePosition*4.0);
+  vWorldPos = mvPosition.xyz;
+
+  //gl_PointSize = size * (lifePosition*4.0*(1.0+2.0*abs(cos(time*3.0)*sin(time*2.0)*mvPosition.y/10.0)))*2.0;
+  gl_PointSize = size * (lifePosition*4.0)*2.0;
 
   gl_Position = projectionMatrix * mvPosition;
 
