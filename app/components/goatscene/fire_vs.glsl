@@ -40,9 +40,9 @@ void main() {
   vColor = customColor;
   vOffset = offset;
 
-  vec3 mid = vec3(0.0, 20.5, 0.0);
+  vec3 mid = vec3(0.0, 10.5, 0.0);
   //vec3 rpos = rotateAngleAxis(start+time, vec3(mod(start,16.0), -8.0+mod(start,15.0), 1.0), position - mid) + mid;
-  vec3 rpos = rotateAngleAxis(start+time*2.0, vec3(0.0, 0.5, 0.0), position - mid) + mid;
+  vec3 rpos = rotateAngleAxis(start+time*2.0, vec3(0.1, 0.5, 0.1), position - mid) + mid;
   //vec3 rpos = position.xyz;
 
   //vec4 fpos = vec4(rpos,1.0);//vec4( mix(position,rpos,0.5), 1.0 );
@@ -50,6 +50,8 @@ void main() {
 
   //pos.y += 5.0*sin(time*2.0);
   float offsetTarget = 4.0*(mod(time,0.001)+0.5);
+
+  vColor.rbg = mix(vColor.rbg,vec3(0.0),position.y/12.6);
 
   vColor.rbg = vColor.rbg*vec3(offsetTarget-(fpos.y-5.0));
 
@@ -66,6 +68,8 @@ void main() {
   gl_PointSize = size * (lifePosition*4.0)*2.0;
 
   gl_Position = projectionMatrix * mvPosition;
+
+
 
   vRotation = (time+rotation);
 
