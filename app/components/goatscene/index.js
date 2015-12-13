@@ -103,7 +103,8 @@ module.exports = {
         { id:'sparkTexture', url:'images/sparks.png'},
         { id:'goatNormalMap', url:'images/bock_normal.jpg'},
         { id:'facade', url:'images/facade2.jpg'},
-        { id:'facadeSpec', url:'images/facade-spec.jpg'},
+        { id:'facadeSpec', url:'images/facade-spec.jpg'}
+
       ];
 
       var scope = this;
@@ -116,7 +117,8 @@ module.exports = {
         var item = images[index];
 
         if( !item ) {
-          scope.init3D();
+          scope.loadSky();
+
           return;
         }
 
@@ -166,6 +168,25 @@ module.exports = {
 
     },
 
+    loadSky: function(){
+      var path = "images/dark/";
+      var format = '.jpg';
+      var urls = [
+          path + 'posz' + format, path + 'negz' + format,
+          path + 'posy' + format, path + 'negy' + format,
+          path + 'posx' + format, path + 'negx' + format
+        ];
+
+      var loader = new THREE.CubeTextureLoader();
+      var texture = loader.load( urls, onLoad );
+
+      var self = this;
+      function onLoad(){
+        self.textureLib.sky = texture;
+        self.init3D();
+      };
+    },
+
 
     start: function() {
 
@@ -189,13 +210,14 @@ module.exports = {
       this.scene.add(this.mainContainer);
 
 
-      this.camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, 1100);
-      this.scene.add(this.camera);
-      this.scene.fog = new THREE.Fog( 0x111122, 0, 1000 ) ;
+      this.camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 2100);
+      //this.scene.add(this.camera);
+      this.scene.fog = new THREE.Fog( 0x111122, 0, 200 ) ;
       //matrix.fromArray( mainData.object.children[0].matrix );
       //matrix.decompose( this.camera.position, this.camera.quaternion, this.camera.scale );
 
-      this.camera.position.set(-30,15,-10);
+      this.camera.position.set(-10,1,-8);
+
 
       this.renderer = new THREE.WebGLRenderer({
         alpha: false
@@ -218,8 +240,8 @@ module.exports = {
       this.composer.setSize(window.innerWidth,window.innerHeight);
       this.bloomPass = new WAGNER.MultiPassBloomPass();
       this.bloomPass.params.blurAmount = this.settings.blurAmount;
-      this.bloomPass.params.applyZoomBlur = false;
-      this.bloomPass.params.zoomBlurCenter = new THREE.Vector2( 0,1.5 );
+      this.bloomPass.params.applyZoomBlur = true;
+      this.bloomPass.params.zoomBlurCenter = new THREE.Vector2( 0,1 );
       this.bloomPass.brightnessContrastPass.params.brightness = 1;
       this.bloomPass.brightnessContrastPass.params.contrast = 1;
 
@@ -238,7 +260,8 @@ module.exports = {
         new THREE.MeshLambertMaterial({
           map:this.textureLib.snow,
           normalMap:this.textureLib.snowNormal,
-          color:0x777799
+          color:0x777799,
+          fog:true
         })
       );
       this.goat.add(plane);
@@ -251,9 +274,26 @@ module.exports = {
       this.startSparkParticleEngine();
 
       //camera rotation
-      var lookAtPos = this.goat.position.clone();
-      lookAtPos.y += 5;
-      this.camera.lookAt(lookAtPos);
+      this.focusPoint = this.goat.position.clone();
+      this.focusPoint.y += 5;
+
+      var shader = THREE.ShaderLib[ "cube" ];
+      shader.uniforms[ "tCube" ].value = this.textureLib.sky;
+
+
+      var material = new THREE.ShaderMaterial( {
+          fragmentShader: shader.fragmentShader,
+          vertexShader: shader.vertexShader,
+          uniforms: shader.uniforms,
+          depthWrite: false,
+          side: THREE.BackSide
+
+        } );
+
+      //var material = new THREE.MeshBasicMaterial( { color: 0xffffff, side: THREE.BackSide } );
+      var sky = new THREE.Mesh( new THREE.BoxGeometry( 1000, 1000, 1000 ), material );
+      this.mainContainer.add( sky );
+
 
       this.start();
 
@@ -545,8 +585,8 @@ module.exports = {
       var mainSceneParsed = loader.parse(mainSceneData);
 
       var frame = mainSceneParsed.children[2];
-      frame.material = new THREE.MeshLambertMaterial({color:0x000000});
-      frame.castShadow = true;
+      frame.material = new THREE.MeshLambertMaterial({color:0x8e7923});
+      //frame.castShadow = true;
       //matrix.fromArray( data.object.children[1].matrix );
       //matrix.decompose( goat.position, goat.quaternion, goat.scale );
       this.mainContainer.add(frame);
@@ -607,7 +647,7 @@ module.exports = {
 
       uniforms.shininess.value = 20;
 
-      uniforms.offsetRepeat.value.set( 0, -1, 6, 3 );
+      uniforms.offsetRepeat.value.set( 0, -1, 3, 2 );
 
       var vertexShader = [
 
@@ -712,7 +752,7 @@ module.exports = {
       //var uniformClone = THREE.UniformsUtils.clone( uniforms );
 
       this.totalSets = 10;
-var radius = 120;
+      var radius = 120;
       for (var i = 0; i < this.totalSets; i++) {
 
           material = buildingMat;
@@ -737,9 +777,14 @@ var radius = 120;
         this.rafId = raf(this.render);
       }
 
-      this.mainContainer.rotation.y = (this.mouse2d.x+1)/2*3 + Math.PI*0.5;
-      this.particleSystem.rotation.y = (this.mouse2d.x+1)/2*3;
-      this.sparkParticleSystem.rotation.y = (this.mouse2d.x+1)/2*3;
+      //this.scene.rotation.y = (this.mouse2d.x+1)/2*3 + Math.PI*0.5;
+      //this.particleSystem.rotation.y = (this.mouse2d.x+1)/2*3;
+      //this.sparkParticleSystem.rotation.y = (this.mouse2d.x+1)/2*3;
+
+      this.focusPoint.y += ((7+this.mouse2d.y*8)-this.focusPoint.y)*0.1;
+
+      this.camera.position.x += ((this.mouse2d.x*4+6)-this.camera.position.x )*0.1;
+      this.camera.lookAt(this.focusPoint);
 
       this.sparkParticleUniforms.time.value += 0.005;//(this.mouse2d.x+1)/2 * 4;
       this.sparkParticleUniforms.effect.value = this.settings.fireIntensity;
@@ -753,10 +798,8 @@ var radius = 120;
 
       this.bloomPass.params.zoomBlurStrength = this.settings.zoomBlurStrength;
       this.bloomPass.params.blurAmount = this.settings.bloomBlur;
-      this.bloomPass.brightnessContrastPass.params.brightness = this.settings.brightness;
-      this.bloomPass.brightnessContrastPass.params.contrast = this.settings.contrast;
 
-      //this.renderer.render(this.scene, this.camera);
+
       this.renderer.autoClearColor = true;
       this.composer.reset();
       this.composer.render(this.scene, this.camera);
