@@ -92,12 +92,13 @@ module.exports = {
     loadTextures: function(){
 
       var total = 4;
-      var loaded = 0;
+
       var loader = new THREE.TextureLoader();
 
       var images = [
-        { id:'snow', url:'images/snow.jpg'},
-        { id:'snowNormal', url:'images/snow2.jpg'},
+
+        { id:'groundNormal', url:'images/snow-normal.jpg'},
+        { id:'groundShadows', url:'images/ground-shadows2.jpg'},
         { id:'goatMap', url:'images/bock_map.jpg'},
         { id:'fireTexture', url:'images/fire.png'},
         { id:'sparkTexture', url:'images/sparks.png'},
@@ -248,14 +249,17 @@ module.exports = {
       this.vignettePass = new WAGNER.VignettePass();
       this.vignettePass.params.amount = 0.7;
 
+      var loader = new THREE.ObjectLoader();
+      this.mainSceneParsed = loader.parse(mainSceneData);
 
       this.initGoat();
 
       this.initFence();
+      this.initGround();
 
 
       //ground
-      var plane = new THREE.Mesh(
+      /*var plane = new THREE.Mesh(
         new THREE.PlaneGeometry(400,400,2,2),
         new THREE.MeshLambertMaterial({
           map:this.textureLib.snow,
@@ -266,7 +270,7 @@ module.exports = {
       );
       this.goat.add(plane);
       plane.rotation.x = Math.PI*0.5;
-
+*/
       this.initWoodenFrame();
       this.initLights();
       this.createSceneObjects();
@@ -294,6 +298,7 @@ module.exports = {
       var sky = new THREE.Mesh( new THREE.BoxGeometry( 1000, 1000, 1000 ), material );
       this.mainContainer.add( sky );
 
+      this.mainSceneParsed = null;
 
       this.start();
 
@@ -567,28 +572,143 @@ module.exports = {
 
     initFence: function(){
       //wooden frame
-      var loader = new THREE.ObjectLoader();
-      var mainSceneParsed = loader.parse(mainSceneData);
 
-      var frame = mainSceneParsed.children[1];
-      frame.material = new THREE.MeshLambertMaterial({color:0x444400});
-      frame.castShadow = true;
-      //matrix.fromArray( data.object.children[1].matrix );
-      //matrix.decompose( goat.position, goat.quaternion, goat.scale );
+      var frame = this.mainSceneParsed.getChildByName("Fence");
+      frame.material = new THREE.MeshLambertMaterial({color:0x332f27, side:THREE.DoubleSide});
       this.mainContainer.add(frame);
     },
 
 
+    initGround: function(){
+      //wooden frame
+      var ground = this.mainSceneParsed.getChildByName("Ground");
+
+      //ground.material = new THREE.MeshPhongMaterial({color:0xbbe5ff, map:this.textureLib.groundShadows, specular:0xffffff, shininess:90, normalMap: this.textureLib.groundNormal});
+      this.textureLib.groundNormal.wrapS = this.textureLib.groundNormal.wrapT = THREE.RepeatWrapping;
+      var phongShader = THREE.ShaderLib.phong;
+
+      var uniforms = THREE.UniformsUtils.clone(phongShader.uniforms);
+
+      uniforms.map.value = this.textureLib.groundShadows;
+      uniforms.normalMap.value = this.textureLib.groundNormal;
+      uniforms.normalScale.value = new THREE.Vector2(0.2,0.2);
+
+      uniforms.diffuse.value.set(0xffffff);
+      uniforms.specular.value.set( 0xffffff);
+
+      uniforms.shininess.value = 20;
+
+      uniforms.offsetRepeat.value.set( 0, 0, 1, 1 );
+
+      var vertexShader = [
+
+        "#define PHONG",
+
+        "varying vec3 vViewPosition;",
+        "varying vec3 vNormal;",
+
+        THREE.ShaderChunk[ "common" ],
+        THREE.ShaderChunk[ "uv_pars_vertex" ],
+        THREE.ShaderChunk[ "lights_phong_pars_vertex" ],
+        THREE.ShaderChunk[ "color_pars_vertex" ],
+        THREE.ShaderChunk[ "logdepthbuf_pars_vertex" ],
+
+        "void main() {",
+        THREE.ShaderChunk[ "uv_vertex" ],
+        THREE.ShaderChunk[ "color_vertex" ],
+        THREE.ShaderChunk[ "beginnormal_vertex" ],
+        THREE.ShaderChunk[ "defaultnormal_vertex" ],
+        " vNormal = normalize( transformedNormal );",
+        THREE.ShaderChunk[ "begin_vertex" ],
+        THREE.ShaderChunk[ "project_vertex" ],
+        " vViewPosition = -mvPosition.xyz;",
+        THREE.ShaderChunk[ "worldpos_vertex" ],
+        THREE.ShaderChunk[ "lights_phong_vertex" ],
+        "}"
+
+      ].join("\n");
+
+      var fragmentShader = [
+
+        "#define PHONG",
+
+        "uniform vec3 diffuse;",
+        "uniform float opacity;",
+
+        "uniform vec3 ambient;",
+        "uniform vec3 emissive;",
+        "uniform vec3 specular;",
+        "uniform float shininess;",
+
+        THREE.ShaderChunk[ "common" ],
+        THREE.ShaderChunk[ "color_pars_fragment" ],
+        THREE.ShaderChunk[ "uv_pars_fragment" ],
+        THREE.ShaderChunk[ "map_pars_fragment" ],
+        THREE.ShaderChunk[ "alphamap_pars_fragment" ],
+        THREE.ShaderChunk[ "aomap_pars_fragment" ],
+        THREE.ShaderChunk[ "lightmap_pars_fragment" ],
+        THREE.ShaderChunk[ "emissivemap_pars_fragment" ],
+        THREE.ShaderChunk[ "envmap_pars_fragment" ],
+        THREE.ShaderChunk[ "fog_pars_fragment" ],
+        THREE.ShaderChunk[ "lights_phong_pars_fragment" ],
+        THREE.ShaderChunk[ "shadowmap_pars_fragment" ],
+        THREE.ShaderChunk[ "bumpmap_pars_fragment" ],
+        "#ifdef USE_NORMALMAP\n\n uniform sampler2D normalMap;\n  uniform vec2 normalScale;\n\n\n vec3 perturbNormal2Arb( vec3 eye_pos, vec3 surf_norm ) {\n\n    vec3 q0 = dFdx( eye_pos.xyz );\n    vec3 q1 = dFdy( eye_pos.xyz );\n    vec2 st0 = dFdx( vUv.st );\n    vec2 st1 = dFdy( vUv.st );\n\n    vec3 S = normalize( q0 * st1.t - q1 * st0.t );\n    vec3 T = normalize( -q0 * st1.s + q1 * st0.s );\n   vec3 N = normalize( surf_norm );\n\n    vec3 mapN = texture2D( normalMap, vUv*10.0 ).xyz * 2.0 - 1.0;\n    mapN.xy = normalScale * mapN.xy;\n    mat3 tsn = mat3( S, T, N );\n   return normalize( tsn * mapN );\n\n }\n\n#endif\n",
+        THREE.ShaderChunk[ "specularmap_pars_fragment" ],
+        THREE.ShaderChunk[ "logdepthbuf_pars_fragment" ],
+
+        "void main() {",
+
+        " vec3 outgoingLight = vec3( 0.0 );",
+      " vec4 diffuseColor = vec4( diffuse, opacity );",
+      " vec3 totalAmbientLight = ambientLightColor;",
+      " vec3 totalEmissiveLight = emissive;",
+      " vec3 shadowMask = vec3( 1.0 );",
+
+        THREE.ShaderChunk[ "map_fragment" ],
+        THREE.ShaderChunk[ "color_fragment" ],
+        THREE.ShaderChunk[ "specularmap_fragment" ],
+        THREE.ShaderChunk[ "normal_phong_fragment" ],
+        THREE.ShaderChunk[ "lights_phong_fragment" ],
+
+        " outgoingLight += diffuseColor.rgb * ( totalDiffuseLight + totalAmbientLight ) + totalSpecularLight + totalEmissiveLight;",
+
+
+        THREE.ShaderChunk[ "linear_to_gamma_fragment" ],
+
+        THREE.ShaderChunk[ "fog_fragment" ],
+
+        " gl_FragColor = vec4( outgoingLight, diffuseColor.a );",
+
+        "}"
+
+      ].join("\n");
+
+      var defines = {'USE_MAP':'','USE_NORMALMAP':''};
+
+      ground.material= new THREE.ShaderMaterial({
+        defines:defines,
+        uniforms: uniforms,
+        vertexShader: vertexShader,
+        fragmentShader: fragmentShader,
+        lights:true,
+        derivatives:true,
+        fog: true
+      });
+
+      this.mainContainer.add(ground);
+
+      var can = this.mainSceneParsed.getChildByName("SpotCan");
+      can.material = new THREE.MeshLambertMaterial({color:0x000000});
+      this.mainContainer.add(can);
+    },
+
     initWoodenFrame: function(){
       //wooden frame
-      var loader = new THREE.ObjectLoader();
-      var mainSceneParsed = loader.parse(mainSceneData);
+      console.log(this.mainSceneParsed);
+      var frame = this.mainSceneParsed.getChildByName("wodden_frame");
+      frame.material = new THREE.MeshLambertMaterial({color:0x000000});
 
-      var frame = mainSceneParsed.children[2];
-      frame.material = new THREE.MeshLambertMaterial({color:0x8e7923});
-      //frame.castShadow = true;
-      //matrix.fromArray( data.object.children[1].matrix );
-      //matrix.decompose( goat.position, goat.quaternion, goat.scale );
       this.mainContainer.add(frame);
     },
 
@@ -597,9 +717,11 @@ module.exports = {
       light.position.copy(this.goat.position);
       light.position.y += 2;
       light.position.z += 1;
-
       this.mainContainer.add(light);
 
+      this.fireLight = new THREE.PointLight(0xffff00, 1, 100);
+      this.fireLight.position.copy(this.goat.position);
+      this.mainContainer.add(this.fireLight);
 
 
       light = new THREE.DirectionalLight(0xffffff, 0.7);
@@ -777,13 +899,12 @@ module.exports = {
         this.rafId = raf(this.render);
       }
 
-      //this.scene.rotation.y = (this.mouse2d.x+1)/2*3 + Math.PI*0.5;
-      //this.particleSystem.rotation.y = (this.mouse2d.x+1)/2*3;
-      //this.sparkParticleSystem.rotation.y = (this.mouse2d.x+1)/2*3;
+      //this.focusPoint.y += ((7+this.mouse2d.y*8)-this.focusPoint.y)*0.1;
 
-      this.focusPoint.y += ((7+this.mouse2d.y*8)-this.focusPoint.y)*0.1;
-
-      this.camera.position.x += ((this.mouse2d.x*4+6)-this.camera.position.x )*0.1;
+      this.fireLight.intensity = (Math.sin(this.uniforms.time.value*60 + Math.random()*2)*Math.cos(this.uniforms.time.value*3)*Math.sin(this.uniforms.time.value*20)*0.2 + 0.8)*this.settings.fireIntensity;
+      this.fireLight.distance = 40*this.fireLight.intensity;
+      //this.camera.position.x += ((this.mouse2d.x*4+6)-this.camera.position.x )*0.1;
+      this.camera.position.x = Math.sin(this.uniforms.time.value*0.3)*4+4;
       this.camera.lookAt(this.focusPoint);
 
       this.sparkParticleUniforms.time.value += 0.005;//(this.mouse2d.x+1)/2 * 4;
