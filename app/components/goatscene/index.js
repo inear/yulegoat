@@ -331,7 +331,7 @@ module.exports = {
         displacementArray[i] = 1.3*goat1data.data.attributes.position.array[(i*3+1)]/(smallest);//4*goat1data.data.attributes.normal[i*3]//Math.random();//goatData.metadata.position;
         displacementArray[i] += Math.random()*0.3;
 
-        if( Math.random() > 0.97 && goat1data.data.attributes.position.array[(i*3+1)] < 5 ) {
+        if( Math.random() > 0.97 && goat1data.data.attributes.position.array[(i*3+1)] < 5) {
           //create paricle spawn point
           this.createSpawnPoint(
             new THREE.Vector3(goat1data.data.attributes.position.array[(i*3)],
@@ -574,7 +574,7 @@ module.exports = {
       //wooden frame
 
       var frame = this.mainSceneParsed.getChildByName("Fence");
-      frame.material = new THREE.MeshLambertMaterial({color:0x332f27, side:THREE.DoubleSide});
+      frame.material = new THREE.MeshLambertMaterial({color:0xffffff, side:THREE.DoubleSide});
       this.mainContainer.add(frame);
     },
 
