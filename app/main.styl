@@ -1,6 +1,6 @@
 /* Utils
   ========================================================================== */
-
+@import url(https://fonts.googleapis.com/css?family=Italianno);
 @import "../node_modules/nk-css-reset/index.css";
 @import "../node_modules/nk-css-utils/index.css";
 @import "../node_modules/stylus-easing/index.styl";
@@ -9,24 +9,19 @@
   ========================================================================== */
 
 body {
-
+  overflow: hidden;
 }
 
 .App {
 }
 
-.grab {
-  cursor: grab;
-  cursor: -webkit-grab;
-  cursor: -moz-grab;
-  cursor: url('http://s3.amazonaws.com/urbanjungle/images/openhand.cur'), move;
+
+.inactive {
+  display:none;
 }
 
-.grabbing {
-  cursor: grab;
-  cursor: -webkit-grabbing;
-  cursor: -moz-grabbing;
-  cursor: url('http://s3.amazonaws.com/urbanjungle/images/closedhand.cur'), move;
+canvas {
+  overflow:hidden;
 }
 
 /* Components

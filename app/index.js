@@ -68,7 +68,8 @@ new Vue({
     'loader': require('./components/loader'),
     'nosupport': require('./components/nosupport'),
     'about': require('./components/about'),
-    'goatscene': require('./components/goatscene')
+    'goatscene': require('./components/goatscene'),
+    'rhyme': require('./components/rhyme')
   },
 
   data: function() {

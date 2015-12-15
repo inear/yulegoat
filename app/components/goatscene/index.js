@@ -591,12 +591,13 @@ module.exports = {
 
       uniforms.map.value = this.textureLib.groundShadows;
       uniforms.normalMap.value = this.textureLib.groundNormal;
-      uniforms.normalScale.value = new THREE.Vector2(0.2,0.2);
+      uniforms.normalScale.value = new THREE.Vector2(0.4,0.3);
 
       uniforms.diffuse.value.set(0xffffff);
-      uniforms.specular.value.set( 0xffffff);
+      uniforms.specular.value.set( 0x442222);
 
-      uniforms.shininess.value = 20;
+
+      uniforms.shininess.value = 70;
 
       uniforms.offsetRepeat.value.set( 0, 0, 1, 1 );
 
@@ -717,6 +718,7 @@ module.exports = {
       light.position.copy(this.goat.position);
       light.position.y += 2;
       light.position.z += 1;
+      //light.position.x += 1;
       this.mainContainer.add(light);
 
       this.fireLight = new THREE.PointLight(0xffff00, 1, 100);
@@ -725,10 +727,10 @@ module.exports = {
 
 
       light = new THREE.DirectionalLight(0xffffff, 0.7);
-      light.position.set(100, 400, -100);
+      light.position.set(1, 4, 1);
       this.scene.add(light);
 
-      //light = new THREE.AmbientLight(0x222222, 0.2);
+      light = new THREE.AmbientLight(0x222222, 0.2);
       //this.scene.add(light);
 
 /*
@@ -869,9 +871,6 @@ module.exports = {
         fog: true
       });
 
-      //buildingMat = new THREE.MeshPhongMaterial({map:facadeTexture, specularMap: facadeSpecTexture});
-
-      //var uniformClone = THREE.UniformsUtils.clone( uniforms );
 
       this.totalSets = 10;
       var radius = 120;
@@ -902,9 +901,10 @@ module.exports = {
       //this.focusPoint.y += ((7+this.mouse2d.y*8)-this.focusPoint.y)*0.1;
 
       this.fireLight.intensity = (Math.sin(this.uniforms.time.value*60 + Math.random()*2)*Math.cos(this.uniforms.time.value*3)*Math.sin(this.uniforms.time.value*20)*0.2 + 0.8)*this.settings.fireIntensity;
-      this.fireLight.distance = 40*this.fireLight.intensity;
+      this.fireLight.distance = 100*this.fireLight.intensity;
       //this.camera.position.x += ((this.mouse2d.x*4+6)-this.camera.position.x )*0.1;
       this.camera.position.x = Math.sin(this.uniforms.time.value*0.3)*4+4;
+      this.camera.position.y = 1.3 + Math.sin(this.uniforms.time.value*0.3)*-0.5;
       this.camera.lookAt(this.focusPoint);
 
       this.sparkParticleUniforms.time.value += 0.005;//(this.mouse2d.x+1)/2 * 4;
