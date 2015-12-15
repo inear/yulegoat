@@ -20,7 +20,7 @@ var bsOpts = require('defaults')({
       baseDir: cfg.output.root,
       index: 'index.html',
       // SPA app, redirect requests to index.html
-      middleware: [historyApiFallback]
+      middleware: []
     }
   }
 );
@@ -30,6 +30,6 @@ gulp.task('server', ['build'], function() {
 
   if (opts.watch) {
     // CSS are directly streamed from stylus' task.
-    gulp.watch(['./static/**/*.js', './static/**/*.glsl', '!./static/**/*.css'], browserSync.reload);
+    gulp.watch(['./static/**/*.html', './static/**/*.js', './static/**/*.glsl', '!./static/**/*.css'], browserSync.reload);
   }
 });

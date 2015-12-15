@@ -3,7 +3,7 @@
 var options = require('minimist')(process.argv.slice(2));
 options = require('defaults')(options, {
   debug: true,
-  watch: false,
+  watch: true,
   minify: false,
   env: 'development'
 });

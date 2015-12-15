@@ -31,10 +31,34 @@
   }
 
   .next {
-    color: #b81b1b;
+    display: inline-block;
+    margin-top:20px;
+
+    background:rgba(0,0,0,0);
+
     font-size: 30px;
-    font-family:'verdana'
-    text-shadow: 2px 2px 8px rgba(0,0,0,0.8);
+    font-family: 'Dosis', sans-serif;
+    font-weight: 400;
+    text-transform:uppercase;
+    letter-spacing:1px;
+    //text-shadow: 2px 2px 8px rgba(0,0,0,0.8);
+
+    width:200px;
+    height:200px;
+    background-image: url('./../images/next.png');
+    background-size: cover;
+    line-height:170px;
+    text-decoration:none;
+
+    &:active {
+      text-decoration:none;
+    }
+
+    transition: transform 0.1s;
+
+    &:hover {
+      transform: scale(1.1);
+    }
   }
 
   .playagain {
