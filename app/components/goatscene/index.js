@@ -283,6 +283,42 @@ module.exports = {
         this.camera.lookAt(this.focusPoint);
 
       };
+
+      //step 6
+      this.cameraDataDict[6] = {
+        pos: new THREE.Vector3(8.5,0.7,3),
+        target: new THREE.Vector3(0,5,0)
+      };
+
+      this.cameraUpdateFunctions[6] = function(){
+        //this.focusPoint.copy(this.cameraDataDict[4].target);
+        this.focusPoint.x = this.cameraDataDict[6].target.x;
+        this.focusPoint.z = this.cameraDataDict[6].target.z;
+        this.focusPoint.y += ((this.cameraDataDict[6].target.y+this.mouse2d.y*1.2)-this.focusPoint.y)*0.1;
+        this.camera.position.z = this.cameraDataDict[6].pos.z;
+        this.camera.position.x = this.cameraDataDict[6].pos.x;
+        this.camera.position.y = this.cameraDataDict[6].pos.y;
+        this.camera.lookAt(this.focusPoint);
+
+      };
+
+      //step 8
+      this.cameraDataDict[8] = {
+        pos: new THREE.Vector3(0,23,0),
+        target: new THREE.Vector3(2,81,100)
+      };
+
+      this.cameraUpdateFunctions[8] = function(){
+
+        this.focusPoint.x = this.cameraDataDict[8].target.x;
+        this.focusPoint.z = this.cameraDataDict[8].target.z;
+        this.focusPoint.y += ((this.cameraDataDict[8].target.y+this.mouse2d.y*1.2)-this.focusPoint.y)*0.1;
+        this.camera.position.z = this.cameraDataDict[8].pos.z;
+        this.camera.position.x = this.cameraDataDict[8].pos.x;
+        this.camera.position.y = this.cameraDataDict[8].pos.y;
+        this.camera.lookAt(this.focusPoint);
+
+      };
     },
 
 
