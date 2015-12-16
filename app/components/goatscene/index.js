@@ -371,8 +371,6 @@ module.exports = {
       this.bloomPass.params.blurAmount = this.settings.blurAmount;
       this.bloomPass.params.applyZoomBlur = true;
       this.bloomPass.params.zoomBlurCenter = new THREE.Vector2( 0,1 );
-      this.bloomPass.brightnessContrastPass.params.brightness = 1;
-      this.bloomPass.brightnessContrastPass.params.contrast = 1;
 
       this.vignettePass = new WAGNER.VignettePass();
       this.vignettePass.params.amount = 0.7;
@@ -834,7 +832,7 @@ module.exports = {
 
     initWoodenFrame: function(){
       //wooden frame
-      console.log(this.mainSceneParsed);
+
       var frame = this.mainSceneParsed.getChildByName("wodden_frame");
       frame.material = new THREE.MeshLambertMaterial({color:0x000000});
 
@@ -1053,7 +1051,11 @@ module.exports = {
       this.renderer.autoClearColor = true;
       this.composer.reset();
       this.composer.render(this.scene, this.camera);
-      this.composer.pass(this.bloomPass);
+
+      if( !detector.browsers.lowPerformance) {
+        this.composer.pass(this.bloomPass);
+      }
+
       this.composer.pass(this.vignettePass);
       this.composer.toScreen();
 
