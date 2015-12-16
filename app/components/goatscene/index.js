@@ -12,6 +12,7 @@ var detector = require('../../lib/detector');
 var dat = require('dat-gui');
 var mainSceneData = require('./mainscene.json');
 var goatData = require('./goatscene.json');
+var qs = require('nk-query-string');
 
 module.exports = {
   replace: true,
@@ -48,16 +49,17 @@ module.exports = {
       'onPreload',
       'render',
       'onMouseMove',
-      'onResize'
+      'onResize',
+      'onStep'
     );
 
     this.sub('preload:goatscene', this.onPreload);
+    this.sub('step', this.onStep);
 
   },
 
   attached: function() {
 
-    console.log("attached");
     window.addEventListener('resize', this.onResize);
 
     this.loadTextures();
@@ -75,7 +77,7 @@ module.exports = {
   },
 
   ready: function() {
-    console.log("ready");
+
     this.threeEl = document.querySelector('.Goat_three');
     this.mouse2d = new THREE.Vector2();
 
@@ -154,18 +156,16 @@ module.exports = {
         fireIntensity: 0.90,
 
         zoomBlurStrength:0.13001,
-        bloomBlur:2.001,
-        brightness:0.9,
-        contrast:0.9
+        bloomBlur:2.001
       };
+
+      return;
 
       var gui = new dat.GUI();
       gui.add(this.settings, 'goatBurned', 0, 4);
       gui.add(this.settings, 'fireIntensity', 0, 2);
       gui.add(this.settings, 'bloomBlur', 0, 5);
       gui.add(this.settings, 'zoomBlurStrength', 0, 1);
-      gui.add(this.settings, 'brightness', 0, 4);
-      gui.add(this.settings, 'contrast', 0, 3);
 
     },
 
@@ -185,13 +185,21 @@ module.exports = {
       function onLoad(){
         self.textureLib.sky = texture;
         self.init3D();
-      };
+      }
     },
 
 
     start: function() {
 
       this.isRunning = true;
+
+      if( qs('step') ) {
+        this.onStep(parseInt(qs('step'),10));
+      }
+      else {
+        this.onStep(1);
+      }
+
       this.render();
       this.onResize();
 
@@ -202,6 +210,118 @@ module.exports = {
       this.mouse2d.y = -(event.clientY / this.size.h) * 2 + 1;
     },
 
+    initCameraPositions: function(){
+      this.currentStep = 0;
+      this.cameraUpdateFunctions = [];
+
+      this.cameraDataDict = Object.create(null);
+
+      this.focusPoint = new THREE.Vector3();
+
+      //default
+      this.cameraDataDict[0] = {
+        pos: new THREE.Vector3(-10,1,-8),
+        target: new THREE.Vector3(0,5,0)
+      };
+
+      //step 1
+      this.cameraDataDict[1] = {
+        pos: new THREE.Vector3(-4,3,-10),
+        target: new THREE.Vector3(-4,0,-8)
+      };
+
+      this.focusPoint.copy(this.cameraDataDict[1].target);
+
+      this.cameraUpdateFunctions[1] = function(){
+        this.camera.position.copy(this.cameraDataDict[1].pos);
+        this.focusPoint.y += ((this.cameraDataDict[1].target.y+this.mouse2d.y*1.2)-this.focusPoint.y)*0.1;
+        this.focusPoint.z = this.cameraDataDict[1].target.z;
+        this.focusPoint.x += ((this.cameraDataDict[1].target.x+this.mouse2d.x*-0.3)-this.focusPoint.x)*0.1;
+        this.camera.lookAt(this.focusPoint);
+
+      };
+
+
+      //step 2
+      this.cameraDataDict[2] = {
+        pos: new THREE.Vector3(4,1,10),
+        target: new THREE.Vector3(-4,8,-8)
+      };
+
+      this.cameraUpdateFunctions[2] = function(){
+        this.camera.position.copy(this.cameraDataDict[2].pos);
+        this.focusPoint.y += ((this.cameraDataDict[2].target.y+this.mouse2d.y*1.2)-this.focusPoint.y)*0.1;
+        this.focusPoint.z = this.cameraDataDict[2].target.z;
+        this.focusPoint.x += ((this.cameraDataDict[2].target.x+this.mouse2d.x*0.3)-this.focusPoint.x)*0.1;
+        this.camera.lookAt(this.focusPoint);
+
+      };
+
+      //step 4
+      this.cameraDataDict[4] = {
+        pos: new THREE.Vector3(5,4,0),
+        target: new THREE.Vector3(0,12,0)
+      };
+
+      this.cameraUpdateFunctions[4] = function(){
+        //this.focusPoint.copy(this.cameraDataDict[4].target);
+        this.focusPoint.x = this.cameraDataDict[2].target.x;
+        this.focusPoint.z = this.cameraDataDict[2].target.z;
+        this.focusPoint.y += ((this.cameraDataDict[4].target.y+this.mouse2d.y*1.2)-this.focusPoint.y)*0.1;
+        this.camera.position.z = Math.sin(this.uniforms.time.value*0.3)*4+4;
+        this.camera.position.x = this.cameraDataDict[4].pos.x;
+        this.camera.position.y = this.cameraDataDict[4].pos.y;
+        this.camera.lookAt(this.focusPoint);
+
+      };
+    },
+
+
+    onStep: function(step){
+
+      this.currentStep = step;
+      this.setCameraFunction(step);
+
+      if( step === 0 || step === 1) {
+        this.uniforms.time.value = 0;
+        this.settings.goatBurned = 0;
+        this.settings.fireIntensity = 0;
+      }
+      else if( step === 3) {
+        TweenMax.to(this.settings,3,{delay:2,fireIntensity:0.1});
+      }
+      else if( step === 4) {
+        TweenMax.to(this.settings,3,{delay:2,fireIntensity:0.5});
+        TweenMax.to(this.settings,15,{delay:2, goatBurned:0.5});
+      }
+      else if( step === 5) {
+        TweenMax.to(this.settings,3,{delay:0,fireIntensity:0.8});
+        TweenMax.to(this.settings,10,{delay:0, goatBurned:2});
+      }
+      else if( step === 6) {
+        TweenMax.to(this.settings,3,{delay:0,fireIntensity:0.1});
+        TweenMax.to(this.settings,1,{delay:0, goatBurned:2});
+      }
+
+    },
+
+    setCameraFunction: function(step){
+
+      if( this.cameraUpdateFunctions[step]  ){
+        this.renderUpdateFunc = this.cameraUpdateFunctions[step].bind(this);
+      }
+      else {
+        this.renderUpdateFunc = function(){
+          this.focusPoint.copy(this.cameraDataDict[0].target);
+          this.camera.position.z =  this.cameraDataDict[0].pos.z;
+          this.camera.position.x = Math.sin(this.uniforms.time.value*0.3)*4+4;
+          this.camera.position.y = 1.3 + Math.sin(this.uniforms.time.value*0.3)*-0.5;
+          this.camera.lookAt(this.focusPoint);
+        }.bind(this);
+      }
+
+    },
+
     init3D: function() {
 
       this.scene = new THREE.Scene();
@@ -210,8 +330,8 @@ module.exports = {
       this.mainContainer.rotation.y = Math.PI*0.5;
       this.scene.add(this.mainContainer);
 
-
       this.camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 2100);
+
       //this.scene.add(this.camera);
       this.scene.fog = new THREE.Fog( 0x111122, 0, 200 ) ;
       //matrix.fromArray( mainData.object.children[0].matrix );
@@ -256,21 +376,6 @@ module.exports = {
 
       this.initFence();
       this.initGround();
-
-
-      //ground
-      /*var plane = new THREE.Mesh(
-        new THREE.PlaneGeometry(400,400,2,2),
-        new THREE.MeshLambertMaterial({
-          map:this.textureLib.snow,
-          normalMap:this.textureLib.snowNormal,
-          color:0x777799,
-          fog:true
-        })
-      );
-      this.goat.add(plane);
-      plane.rotation.x = Math.PI*0.5;
-*/
       this.initWoodenFrame();
       this.initLights();
       this.createSceneObjects();
@@ -278,8 +383,6 @@ module.exports = {
       this.startSparkParticleEngine();
 
       //camera rotation
-      this.focusPoint = this.goat.position.clone();
-      this.focusPoint.y += 5;
 
       var shader = THREE.ShaderLib[ "cube" ];
       shader.uniforms[ "tCube" ].value = this.textureLib.sky;
@@ -299,6 +402,8 @@ module.exports = {
       this.mainContainer.add( sky );
 
       this.mainSceneParsed = null;
+
+      this.initCameraPositions();
 
       this.start();
 
@@ -591,13 +696,14 @@ module.exports = {
 
       uniforms.map.value = this.textureLib.groundShadows;
       uniforms.normalMap.value = this.textureLib.groundNormal;
-      uniforms.normalScale.value = new THREE.Vector2(0.4,0.3);
+      uniforms.normalScale.value = new THREE.Vector2(-0.4,-0.3);
 
+      uniforms.emissive.value.set(0x333333);
       uniforms.diffuse.value.set(0xffffff);
       uniforms.specular.value.set( 0x442222);
 
 
-      uniforms.shininess.value = 70;
+      uniforms.shininess.value = 20;
 
       uniforms.offsetRepeat.value.set( 0, 0, 1, 1 );
 
@@ -698,6 +804,17 @@ module.exports = {
       });
 
       this.mainContainer.add(ground);
+
+      var plane = new THREE.Mesh(
+        new THREE.PlaneGeometry(400,400,2,2),
+        new THREE.MeshLambertMaterial({
+          color:0xffffff,
+          fog:true
+        })
+      );
+      plane.position.y = -1;
+      this.mainContainer.add(plane);
+      plane.rotation.x = Math.PI*-0.5;
 
       var can = this.mainSceneParsed.getChildByName("SpotCan");
       can.material = new THREE.MeshLambertMaterial({color:0x000000});
@@ -899,13 +1016,11 @@ module.exports = {
       }
 
       //this.focusPoint.y += ((7+this.mouse2d.y*8)-this.focusPoint.y)*0.1;
+      //this.camera.position.x += ((this.mouse2d.x*4+6)-this.camera.position.x )*0.1;
+      this.renderUpdateFunc();
 
       this.fireLight.intensity = (Math.sin(this.uniforms.time.value*60 + Math.random()*2)*Math.cos(this.uniforms.time.value*3)*Math.sin(this.uniforms.time.value*20)*0.2 + 0.8)*this.settings.fireIntensity;
       this.fireLight.distance = 100*this.fireLight.intensity;
-      //this.camera.position.x += ((this.mouse2d.x*4+6)-this.camera.position.x )*0.1;
-      this.camera.position.x = Math.sin(this.uniforms.time.value*0.3)*4+4;
-      this.camera.position.y = 1.3 + Math.sin(this.uniforms.time.value*0.3)*-0.5;
-      this.camera.lookAt(this.focusPoint);
 
       this.sparkParticleUniforms.time.value += 0.005;//(this.mouse2d.x+1)/2 * 4;
       this.sparkParticleUniforms.effect.value = this.settings.fireIntensity;
@@ -915,7 +1030,6 @@ module.exports = {
       this.uniforms.time.value += 0.005;//(this.mouse2d.x+1)/2 * 4;
 
       this.uniforms.goatBurned.value = this.settings.goatBurned;
-
 
       this.bloomPass.params.zoomBlurStrength = this.settings.zoomBlurStrength;
       this.bloomPass.params.blurAmount = this.settings.bloomBlur;
@@ -930,6 +1044,7 @@ module.exports = {
 
 
     },
+
 
     onResize: function() {
 

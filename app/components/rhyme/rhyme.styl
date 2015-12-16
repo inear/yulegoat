@@ -6,68 +6,77 @@
 
   h1 {
     font-size: 100px;
+    letter-spacing:1px;
     font-family:'Italianno';
     text-shadow: 2px 2px 16px rgba(0,0,0,0.8);
   }
 
   p {
-    font-size: 64px;
+    font-size: 74px;
     font-family:'Italianno'
     text-shadow: 2px 2px 8px rgba(0,0,0,0.8);
+
+    @media all and (min-width: 620px) and (max-width:850px) {
+      font-size: 44px;
+    }
+
+    @media all and (min-width: 0px) and (max-width:620px) {
+      font-size: 31px;
+    }
   }
 
-  button {
-    border:none;
-    background: none;
-    font-size:30px;
-    color:white;
-  }
 
   .box {
-    background: white;
-    padding:20px;
-    padding-bottom:-10px;
-    line-height:30px;
-  }
 
-  .next {
-    display: inline-block;
-    margin-top:20px;
-
-    background:rgba(0,0,0,0);
-
-    font-size: 30px;
     font-family: 'Dosis', sans-serif;
+
     font-weight: 400;
     text-transform:uppercase;
     letter-spacing:1px;
-    //text-shadow: 2px 2px 8px rgba(0,0,0,0.8);
+    margin-top:20px;
 
     width:200px;
     height:200px;
+    font-size: 40px;
+    line-height:210px;
+
+    @media all and (min-width: 0px) and (max-width:850px) {
+      margin-top:10px;
+      width:120px;
+      height:120px;
+      line-height:130px;
+      font-size: 30px;
+    }
+
+    transform: scale(0.7);
+
+    transition: transform 0.1s;
+    &:hover {
+      transform: scale(0.9);
+    }
+
+    display: inline-block;
+
     background-image: url('./../images/next.png');
     background-size: cover;
-    line-height:170px;
+
     text-decoration:none;
 
     &:active {
       text-decoration:none;
     }
 
-    transition: transform 0.1s;
-
-    &:hover {
-      transform: scale(1.1);
-    }
   }
 
   .playagain {
 
-    color: #b81b1b;
-    font-size: 64px;
-    font-family:'Italianno'
-    text-shadow: 2px 2px 8px rgba(0,0,0,0.8);
+    font-size: 30px;
+
+    @media all and (min-width: 0px) and (max-width:850px) {
+      font-size: 19px;
+    }
   }
+
 }
 
 
