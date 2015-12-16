@@ -5,7 +5,6 @@ var fs = require('fs');
 var THREE = require('three');
 var WAGNER = require('wagner');
 var raf = require('raf');
-var TimelineMax = require('timelinemax');
 var TweenMax = require('tweenmax');
 var Vue = require('vue');
 var detector = require('../../lib/detector');
@@ -13,6 +12,7 @@ var dat = require('dat-gui');
 var mainSceneData = require('./mainscene.json');
 var goatData = require('./goatscene.json');
 var qs = require('nk-query-string');
+var Howl = require('howler').Howl;
 
 module.exports = {
   replace: true,
@@ -80,6 +80,17 @@ module.exports = {
 
     this.threeEl = document.querySelector('.Goat_three');
     this.mouse2d = new THREE.Vector2();
+
+
+    this.fireSound = new Howl({
+      urls: ['audio/fire.mp3', 'audio/fire.ogg'],
+      autoplay: true,
+      loop: true,
+      volume: 0,
+      onend: function() {
+
+      }
+    });
 
     document.addEventListener('mousemove', this.onMouseMove, false);
 
@@ -353,9 +364,9 @@ module.exports = {
       this.gammaOutput = true;
 
       //post effects
-      WAGNER.vertexShadersPath = '/vertex-shaders';
-      WAGNER.fragmentShadersPath = '/fragment-shaders';
-      WAGNER.assetsPath = '/images';
+      WAGNER.vertexShadersPath = 'vertex-shaders';
+      WAGNER.fragmentShadersPath = 'fragment-shaders';
+      WAGNER.assetsPath = 'images';
 
       this.composer = new WAGNER.Composer( this.renderer, { useRGBA: false } );
       this.composer.setSize(window.innerWidth,window.innerHeight);
@@ -1018,6 +1029,10 @@ module.exports = {
       //this.focusPoint.y += ((7+this.mouse2d.y*8)-this.focusPoint.y)*0.1;
       //this.camera.position.x += ((this.mouse2d.x*4+6)-this.camera.position.x )*0.1;
       this.renderUpdateFunc();
+
+      if( this.fireSound ){
+        this.fireSound.volume(this.settings.fireIntensity);
+      }
 
       this.fireLight.intensity = (Math.sin(this.uniforms.time.value*60 + Math.random()*2)*Math.cos(this.uniforms.time.value*3)*Math.sin(this.uniforms.time.value*20)*0.2 + 0.8)*this.settings.fireIntensity;
       this.fireLight.distance = 100*this.fireLight.intensity;
