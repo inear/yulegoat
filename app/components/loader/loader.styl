@@ -1,18 +1,31 @@
 .Loader {
+
+  color:white;
   text-align:center;
   pointer-events:none;
   overflow:hidden;
   z-index:3;
+
+  font-family:'Italianno';
+  font-size:40px;
+
+
+
+
 }
 
-.Loader-symbol {
+.Loader-bg {
+  background:black;
 
   opacity: 1;
 
   transition: all 0.8s ease-out;
 
-  &.fade-enter, &.fade-leave {
-    opacity: 1;
+  &.fade-leave {
+    opacity: 0;
   }
+}
+
+.Loader-symbol {
 
 }

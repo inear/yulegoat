@@ -26,12 +26,6 @@ if (process.env.NODE_ENV === 'production') {
   debug.disable();
   Vue.config.silent = true;
 } else {
-  // Enable debug log via query string.
-  // Example: ?debug=url,route
-  //
-  // Here `route` is enabled by default.
-  require('enable-debug')(['route'], true);
-
   Vue.config.debug = true;
 }
 
@@ -55,7 +49,7 @@ new Vue({
   ],
 
   compiled: function(){
-    console.log("app compiled");
+
   },
 
   attached: function() {
@@ -67,30 +61,25 @@ new Vue({
   components: {
     'loader': require('./components/loader'),
     'nosupport': require('./components/nosupport'),
-    'about': require('./components/about'),
     'goatscene': require('./components/goatscene'),
     'rhyme': require('./components/rhyme')
   },
 
   data: function() {
     return {
-      showBackBtn: false
+
     };
   },
 
   methods: {
     onLoadComplete: function() {
-      console.log('onLoadComplete');
+
     },
 
     onInitComplete: function() {
-
-      console.log('onInitComplete');
-
       setTimeout(function() {
         this.pub('loader:hide');
-        //this.$$.top.classList.add('active');
-      }.bind(this), 100);
+      }.bind(this), 200);
     }
   }
 });

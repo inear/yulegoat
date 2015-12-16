@@ -153,10 +153,7 @@ module.exports = {
       console.log("onPreload");
 
         //var self = this;
-        Vue.nextTick(function() {
-          this.$dispatch('load-complete');
-          this.$dispatch('init-complete');
-        }, this);
+
 
     },
 
@@ -418,7 +415,10 @@ module.exports = {
 
       this.start();
 
-
+      Vue.nextTick(function() {
+        this.$dispatch('load-complete');
+        this.$dispatch('init-complete');
+      }, this);
 
     },
 

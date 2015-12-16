@@ -53,12 +53,6 @@ module.exports = {
 
     onLoaderShow: function(route) {
       this.show = true;
-      this.showTime = Date.now();
-      if (route) {
-        setTimeout(function() {
-          Vue.navigate(route);
-        }, 500);
-      }
 
       Vue.nextTick(function(){
         this.onResize();
@@ -68,17 +62,12 @@ module.exports = {
 
     onLoaderHide: function() {
 
-      this.show = false;
+     var self = this;
+      setTimeout(function() {
+        self.show = false;
+      }, 500);
 
-      if (Date.now() - this.showTime < 1000) {
-        var self = this;
-        setTimeout(function() {
-          self.show = false;
-        }, 500);
-      }
-      else {
-        this.show = false;
-      }
+
     }
   }
 };
