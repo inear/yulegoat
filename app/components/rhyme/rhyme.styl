@@ -28,6 +28,8 @@
 
   .box {
 
+    background: rbga(0,0,0,0);
+
     font-family: 'Dosis', sans-serif;
 
     font-weight: 400;
@@ -40,20 +42,7 @@
     font-size: 40px;
     line-height:210px;
 
-    @media all and (min-width: 0px) and (max-width:850px) {
-      margin-top:10px;
-      width:120px;
-      height:120px;
-      line-height:130px;
-      font-size: 30px;
-    }
-
     transform: scale(0.7);
-
-    transition: transform 0.1s;
-    &:hover {
-      transform: scale(0.9);
-    }
 
     display: inline-block;
 
@@ -64,6 +53,15 @@
 
     &:active {
       text-decoration:none;
+    }
+
+    @media all and (min-width: 0px) and (max-width:850px) {
+
+      margin-top:0px;
+      width:120px;
+      height:120px;
+      line-height:130px;
+      font-size: 30px;
     }
 
   }

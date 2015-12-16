@@ -51,7 +51,7 @@ module.exports = {
 
       var self = this;
 
-      TweenMax.to(this.nextBtnEl,0.2,{opacity:0, onComplete:function(){
+      TweenMax.to(this.nextBtnEl,0.2,{opacity:0, scale:0.5,force3D:true, onComplete:function(){
         self.nextBtnEl.classList.add('inactive');
       }});
 
@@ -91,7 +91,7 @@ module.exports = {
           else {
             self.nextBtnEl.innerText = "next";
             self.nextBtnEl.classList.remove('inactive');
-              TweenMax.to(self.nextBtnEl,0.2,{overwrite:0,  opacity:1, onComplete:function(){
+              TweenMax.to(self.nextBtnEl,0.2,{overwrite:0, scale:0.7, opacity:1, onComplete:function(){
 
             }});
 

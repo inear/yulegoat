@@ -34,6 +34,7 @@ module.exports = {
 
   created: function(){
     this.size = {w: window.innerWidth, h: window.innerHeight};
+    this.lowPerformance = detector.browsers.lowPerformance();
   },
 
   compiled: function() {
@@ -1052,7 +1053,7 @@ module.exports = {
       this.composer.reset();
       this.composer.render(this.scene, this.camera);
 
-      if( !detector.browsers.lowPerformance) {
+      if( !this.lowPerformance ) {
         this.composer.pass(this.bloomPass);
       }
 
